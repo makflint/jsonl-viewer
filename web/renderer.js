@@ -30,15 +30,13 @@ function renderContentBlock(block, toolResults) {
     if (block.type === 'tool_use') {
         let inputText = block.toolInput;
         try { inputText = JSON.stringify(JSON.parse(block.toolInput), null, 2); } catch(e) {}
-        let html = `<div class="content-block tool-use">
+        const result = toolResults && toolResults[block.toolUseId];
+        const resultHtml = result ? renderContentBlock(result, null) : '';
+        return `<div class="content-block tool-use">
                     <div class="tool-use-label">${escapeHtml(block.toolName)}</div>
                     <div class="tool-use-input">${escapeHtml(inputText)}</div>
+                    ${resultHtml}
                 </div>`;
-        const result = toolResults && toolResults[block.toolUseId];
-        if (result) {
-            html += renderContentBlock(result, null);
-        }
-        return html;
     }
     if (block.type === 'tool_result') {
         const label = block.isError ? 'Error' : 'Result';
