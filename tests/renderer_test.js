@@ -110,6 +110,14 @@ test('renderSession skips ai-title entry since title is shown separately', () =>
     assert(html.includes('hello'), 'should still render user entry');
 });
 
+test('renderEntry hides metadata entries by default', () => {
+    const entry = { type: 'queue-operation', timestamp: '2026-03-25T06:20:14.840Z', content: vec([]) };
+
+    const html = renderEntry(entry);
+
+    assert(html.includes('hidden'), 'metadata entry should have hidden style');
+});
+
 test('entryClass returns metadata for non-message types', () => {
     assert.strictEqual(entryClass('user'), 'user');
     assert.strictEqual(entryClass('assistant'), 'assistant');
