@@ -143,7 +143,8 @@ function renderSession(session) {
 
     for (let i = 0; i < session.entries.size(); i++) {
         const entry = session.entries.get(i);
-        // Tool results are shown nested inside their matching tool_use block
+        // Tool results are already nested inside their matching tool_use block,
+        // so skip entries that contain only tool_result blocks
         if (isToolResultOnly(entry)) continue;
         html += renderEntry(entry, toolResults);
     }
