@@ -10,6 +10,8 @@ struct ContentBlock {
     std::string text;
     std::string tool_name;
     std::string tool_input;
+    std::string tool_use_id;
+    bool is_error = false;
 };
 
 struct SessionEntry {
@@ -38,6 +40,11 @@ inline ContentBlock parse_content_block(const json& block) {
     result.text = extract_block_text(block);
     result.tool_name = block.value("name", "");
     result.tool_input = block.contains("input") ? block["input"].dump() : "";
+    result.tool_use_id = block.value("tool_use_id", "");
+    result.is_error = block.value("is_error", false);
+    if (result.text.empty() && block.contains("content") && block["content"].is_string()) {
+        result.text = block["content"].get<std::string>();
+    }
     return result;
 }
 
