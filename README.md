@@ -26,8 +26,10 @@ node tests/renderer_test.js
 # WASM build (requires Emscripten + Python 3.10+)
 export EMSDK_PYTHON=/usr/bin/python3.10
 mkdir -p build_wasm && cd build_wasm
-emcmake cmake .. && emmake make
+/opt/emsdk/upstream/emscripten/emcmake cmake ..
+/opt/emsdk/upstream/emscripten/emmake make
 # Output: web/parser.js + web/parser.wasm
+# Note: build uses -sNO_DISABLE_EXCEPTION_CATCHING (required for nlohmann/json)
 
 # Run the viewer locally
 cd web && python3 -m http.server 8080
@@ -38,8 +40,9 @@ cd web && python3 -m http.server 8080
 
 Parse and render Claude Code `.jsonl` session files in a browser with:
 - Message timeline (user, assistant, tool calls, tool results)
-- Syntax-highlighted code blocks
 - Collapsible thinking blocks
-- Collapsible tool call details
+- Collapsible tool call details with copyable commands
+- Tool results grouped under their tool call
+- Metadata entries hidden by default (toggle to show)
 - File upload / drag-and-drop of `.jsonl` files
 - Fully client-side (no server needed)
