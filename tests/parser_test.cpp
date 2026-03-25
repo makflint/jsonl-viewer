@@ -42,6 +42,18 @@ TEST_CASE("Parse tool_use block extracts name and input") {
     REQUIRE(entry.content[0].tool_input == "{\"command\":\"ls\",\"description\":\"list files\"}");
 }
 
+TEST_CASE("Parse tool_result block extracts content and tool_use_id") {
+    std::string line = R"({"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_123","content":"file1.txt\nfile2.txt","is_error":false}]}})";
+
+    auto entry = parse_jsonl_line(line);
+
+    REQUIRE(entry.content.size() == 1);
+    REQUIRE(entry.content[0].type == "tool_result");
+    REQUIRE(entry.content[0].text == "file1.txt\nfile2.txt");
+    REQUIRE(entry.content[0].tool_use_id == "toolu_123");
+    REQUIRE(entry.content[0].is_error == false);
+}
+
 TEST_CASE("Parse assistant message without top-level type falls back to message.role") {
     std::string line = R"({"parentUuid":"abc","message":{"role":"assistant","content":[{"type":"text","text":"hi"}]}})";
 
