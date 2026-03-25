@@ -54,9 +54,14 @@ function renderThinkingBlock(block) {
             </div>`;
 }
 
+function renderMarkdown(text) {
+    if (typeof marked !== 'undefined') return marked.parse(text);
+    return escapeHtml(text);
+}
+
 function renderTextBlock(block) {
     const blockClass = block.type === 'text' ? ' text-block' : '';
-    return `<div class="content-block${blockClass}">${escapeHtml(block.text)}</div>`;
+    return `<div class="content-block${blockClass}">${renderMarkdown(block.text)}</div>`;
 }
 
 function renderContentBlock(block, toolResults) {
