@@ -8,6 +8,8 @@ using json = nlohmann::json;
 struct ContentBlock {
     std::string type;
     std::string text;
+    std::string tool_name;
+    std::string tool_input;
 };
 
 struct SessionEntry {
@@ -34,7 +36,9 @@ inline std::vector<ContentBlock> extract_content(const json& entry) {
     std::vector<ContentBlock> blocks;
     if (entry.contains("message") && entry["message"].contains("content")) {
         for (const auto& block : entry["message"]["content"]) {
-            blocks.push_back({block.value("type", ""), extract_block_text(block)});
+            std::string tool_name = block.value("name", "");
+            std::string tool_input = block.contains("input") ? block["input"].dump() : "";
+            blocks.push_back({block.value("type", ""), extract_block_text(block), tool_name, tool_input});
         }
     }
     return blocks;
