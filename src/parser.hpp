@@ -26,10 +26,7 @@ inline std::vector<ContentBlock> extract_content(const json& entry) {
     std::vector<ContentBlock> blocks;
     if (entry.contains("message") && entry["message"].contains("content")) {
         for (const auto& block : entry["message"]["content"]) {
-            ContentBlock cb;
-            cb.type = block.value("type", "");
-            cb.text = block.value("text", "");
-            blocks.push_back(cb);
+            blocks.push_back({block.value("type", ""), block.value("text", "")});
         }
     }
     return blocks;
