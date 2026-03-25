@@ -21,6 +21,14 @@ struct SessionEntry {
     std::vector<ContentBlock> content;
 };
 
+struct Session {
+    std::string title;
+    std::vector<SessionEntry> entries;
+    SessionEntry& operator[](size_t i) { return entries[i]; }
+    const SessionEntry& operator[](size_t i) const { return entries[i]; }
+    size_t size() const { return entries.size(); }
+};
+
 inline std::string extract_entry_type(const json& entry) {
     if (entry.contains("type")) {
         return entry["type"].get<std::string>();
@@ -60,8 +68,7 @@ inline std::vector<ContentBlock> extract_content(const json& entry) {
     return blocks;
 }
 
-inline SessionEntry parse_jsonl_line(const std::string& line) {
-    auto parsed = json::parse(line);
+inline SessionEntry parse_entry(const json& parsed) {
     SessionEntry entry;
     entry.type = extract_entry_type(parsed);
     entry.timestamp = parsed.value("timestamp", "");
@@ -69,13 +76,9 @@ inline SessionEntry parse_jsonl_line(const std::string& line) {
     return entry;
 }
 
-struct Session {
-    std::string title;
-    std::vector<SessionEntry> entries;
-    SessionEntry& operator[](size_t i) { return entries[i]; }
-    const SessionEntry& operator[](size_t i) const { return entries[i]; }
-    size_t size() const { return entries.size(); }
-};
+inline SessionEntry parse_jsonl_line(const std::string& line) {
+    return parse_entry(json::parse(line));
+}
 
 inline Session parse_session(const std::string& jsonl) {
     Session session;
@@ -88,7 +91,7 @@ inline Session parse_session(const std::string& jsonl) {
         if (type == "ai-title") {
             session.title = parsed.value("aiTitle", "");
         } else {
-            session.entries.push_back(parse_jsonl_line(line));
+            session.entries.push_back(parse_entry(parsed));
         }
     }
     return session;
