@@ -73,6 +73,8 @@ function renderEntry(entry, toolResults) {
     return html;
 }
 
+// --- Session-level helpers ---
+
 function buildToolResultMap(entries) {
     const map = {};
     for (let i = 0; i < entries.size(); i++) {
