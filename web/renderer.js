@@ -146,5 +146,5 @@ function renderSession(session) {
 }
 
 if (typeof module !== 'undefined') {
-    module.exports = { escapeHtml, formatTimestamp, entryClass, renderContentBlock, renderEntry, renderSession };
+    module.exports = { escapeHtml, formatTimestamp, entryClass, renderMarkdown, renderContentBlock, renderEntry, renderSession };
 }
