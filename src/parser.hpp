@@ -59,7 +59,7 @@ inline ContentBlock parse_content_block(const json& block) {
     result.text = extract_block_text(block);
     result.tool_name = block.value("name", "");
     result.tool_input = block.contains("input") ? block["input"].dump() : "";
-    result.tool_use_id = block.value("tool_use_id", "");
+    result.tool_use_id = block.value("tool_use_id", block.value("id", ""));
     result.is_error = block.value("is_error", false);
     return result;
 }
