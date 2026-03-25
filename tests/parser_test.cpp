@@ -85,6 +85,16 @@ TEST_CASE("Parse entry extracts timestamp") {
     REQUIRE(entry.timestamp == "2026-03-25T06:20:14.840Z");
 }
 
+TEST_CASE("Parse session title from ai-title entry") {
+    std::string jsonl =
+        R"({"type":"user","timestamp":"2026-03-25T06:20:15.000Z","message":{"role":"user","content":[{"type":"text","text":"hello"}]}})" "\n"
+        R"({"type":"ai-title","sessionId":"abc-123","aiTitle":"Create subdirectories"})";
+
+    auto session = parse_session(jsonl);
+
+    REQUIRE(session.title == "Create subdirectories");
+}
+
 TEST_CASE("Parse assistant message without top-level type falls back to message.role") {
     std::string line = R"({"parentUuid":"abc","message":{"role":"assistant","content":[{"type":"text","text":"hi"}]}})";
 
