@@ -77,6 +77,14 @@ TEST_CASE("Parse error tool_result has is_error true") {
     REQUIRE(entry.content[0].text == "command not found");
 }
 
+TEST_CASE("Parse entry extracts timestamp") {
+    std::string line = R"({"type":"user","timestamp":"2026-03-25T06:20:14.840Z","message":{"role":"user","content":[{"type":"text","text":"hello"}]}})";
+
+    auto entry = parse_jsonl_line(line);
+
+    REQUIRE(entry.timestamp == "2026-03-25T06:20:14.840Z");
+}
+
 TEST_CASE("Parse assistant message without top-level type falls back to message.role") {
     std::string line = R"({"parentUuid":"abc","message":{"role":"assistant","content":[{"type":"text","text":"hi"}]}})";
 
