@@ -138,6 +138,16 @@ test('entryClass returns metadata for non-message types', () => {
     assert.strictEqual(entryClass('file-history-snapshot'), 'metadata');
 });
 
+test('renderContentBlock shows tool description, hides input and result', () => {
+    const block = { type: 'tool_use', text: '', toolName: 'Bash', toolInput: '{"command":"ls","description":"List files"}', toolUseId: 'toolu_123', isError: false };
+    const toolResults = { 'toolu_123': { type: 'tool_result', text: 'file1.txt', toolName: '', toolInput: '', toolUseId: 'toolu_123', isError: false } };
+
+    const html = renderContentBlock(block, toolResults);
+
+    assert(html.includes('List files'), 'should show description');
+    assert(html.includes('tool-use-details'), 'should have collapsible details wrapper');
+});
+
 test('renderSession groups tool_result under matching tool_use', () => {
     const session = {
         title: '',
