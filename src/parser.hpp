@@ -39,7 +39,10 @@ inline std::string extract_entry_type(const json& entry) {
     if (entry.contains("type")) {
         return entry["type"].get<std::string>();
     }
-    return entry["message"]["role"].get<std::string>();
+    if (entry.contains("message") && entry["message"].contains("role")) {
+        return entry["message"]["role"].get<std::string>();
+    }
+    return "unknown";
 }
 
 inline std::string extract_block_text(const json& block) {
@@ -103,6 +106,7 @@ inline Session parse_session(const std::string& jsonl) {
         std::string type = parsed.value("type", "");
         if (type == "ai-title") {
             session.title = parsed.value("aiTitle", "");
+            continue;
         }
         session.entries.push_back(parse_entry(parsed));
     }

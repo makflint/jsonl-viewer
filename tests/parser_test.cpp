@@ -96,15 +96,17 @@ TEST_CASE("Parse session title from ai-title entry") {
     REQUIRE(session.title == "Create subdirectories");
 }
 
-TEST_CASE("Parse session keeps all entries including metadata") {
+TEST_CASE("Parse session keeps metadata entries but excludes ai-title") {
     std::string jsonl =
         R"({"type":"queue-operation","operation":"enqueue","timestamp":"2026-03-25T06:20:14.840Z"})" "\n"
         R"({"type":"user","timestamp":"2026-03-25T06:20:15.000Z","message":{"role":"user","content":[{"type":"text","text":"hello"}]}})" "\n"
+        R"({"type":"ai-title","sessionId":"abc","aiTitle":"My Title"})" "\n"
         R"({"type":"file-history-snapshot","messageId":"abc","snapshot":{}})" "\n"
         R"({"message":{"role":"assistant","content":[{"type":"text","text":"hi"}]}})";
 
     auto session = parse_session(jsonl);
 
+    REQUIRE(session.title == "My Title");
     REQUIRE(session.size() == 4);
     REQUIRE(session[0].type == "queue-operation");
     REQUIRE(session[0].content.empty());
@@ -152,4 +154,12 @@ TEST_CASE("Parse entry with string content does not throw") {
     auto entry = parse_jsonl_line(line);
 
     REQUIRE(entry.content.empty());
+}
+
+TEST_CASE("Parse entry without type or message.role returns unknown") {
+    std::string line = R"({"foo":"bar"})";
+
+    auto entry = parse_jsonl_line(line);
+
+    REQUIRE(entry.type == "unknown");
 }

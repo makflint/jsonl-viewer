@@ -22,10 +22,13 @@ function entryClass(type) {
 
 function renderToolUseBlock(block, toolResults) {
     let inputObj = {};
-    try { inputObj = JSON.parse(block.toolInput); } catch(e) {}
+    let inputText = block.toolInput;
+    try {
+        inputObj = JSON.parse(block.toolInput);
+        inputText = JSON.stringify(inputObj, null, 2);
+    } catch(e) {}
     const description = inputObj.description || '';
     const command = inputObj.command || '';
-    const inputText = JSON.stringify(inputObj, null, 2);
     const result = toolResults && toolResults[block.toolUseId];
     const resultHtml = result ? renderToolResultBlock(result) : '';
     const descHtml = description ? `<div class="tool-use-description">${escapeHtml(description)}</div>` : '';
@@ -43,8 +46,9 @@ function renderToolUseBlock(block, toolResults) {
 
 function renderToolResultBlock(block) {
     const label = block.isError ? 'Error' : 'Result';
-    const errorClass = block.isError ? ' error' : '';
-    return `<div class="content-block tool-result${errorClass}"><div class="tool-result-label${errorClass}">${label}</div><div class="tool-result-text">${escapeHtml(block.text)}</div></div>`;
+    const statusClass = block.isError ? ' error' : '';
+    const labelClass = block.isError ? ' error' : ' ok';
+    return `<div class="content-block tool-result${statusClass}"><div class="tool-result-label${labelClass}">${label}</div><div class="tool-result-text">${escapeHtml(block.text)}</div></div>`;
 }
 
 function renderThinkingBlock(block) {
@@ -55,7 +59,11 @@ function renderThinkingBlock(block) {
 }
 
 function renderMarkdown(text) {
-    if (typeof marked !== 'undefined') return marked.parse(text);
+    if (typeof marked !== 'undefined') {
+        const html = marked.parse(text);
+        if (typeof DOMPurify !== 'undefined') return DOMPurify.sanitize(html);
+        return html;
+    }
     return escapeHtml(text);
 }
 
@@ -91,8 +99,6 @@ function renderEntry(entry, toolResults) {
     html += '</div>';
     return html;
 }
-
-// --- Session-level helpers ---
 
 function buildToolResultMap(entries) {
     const map = {};
@@ -137,7 +143,6 @@ function renderSession(session) {
 
     for (let i = 0; i < session.entries.size(); i++) {
         const entry = session.entries.get(i);
-        if (entry.type === 'ai-title') continue;
         if (isToolResultOnly(entry)) continue;
         html += renderEntry(entry, toolResults);
     }

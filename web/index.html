@@ -163,7 +163,8 @@
     <button class="toggle-metadata" id="toggleMetadata" style="display:none">Show metadata</button>
     <div id="output"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" async></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js" async></script>
     <script src="parser.js"></script>
     <script src="renderer.js"></script>
     <script>
@@ -172,7 +173,9 @@
         const output = document.getElementById('output');
         let parserModule = null;
 
-        ParserModule().then(mod => { parserModule = mod; });
+        ParserModule().then(mod => { parserModule = mod; }).catch(() => {
+            output.innerHTML = '<div class="errors">Failed to load WebAssembly parser module.</div>';
+        });
 
         dropZone.addEventListener('click', () => fileInput.click());
         dropZone.addEventListener('dragover', e => {
@@ -201,13 +204,15 @@
                 ? 'Hide metadata' : 'Show metadata';
         });
 
+        output.addEventListener('click', e => {
+            const toggle = e.target.closest('.thinking, .tool-use');
+            if (toggle) toggle.classList.toggle('open');
+        });
+
         function displaySession(jsonl) {
             const session = parserModule.parseSession(jsonl);
             output.innerHTML = renderSession(session);
             toggleBtn.style.display = '';
-            document.querySelectorAll('.thinking, .tool-use').forEach(el => {
-                el.addEventListener('click', () => el.classList.toggle('open'));
-            });
         }
     </script>
 </body>

@@ -6,6 +6,18 @@ function vec(arr) {
     return { size: () => arr.length, get: i => arr[i] };
 }
 
+function makeBlock(overrides = {}) {
+    return { type: 'text', text: '', toolName: '', toolInput: '', toolUseId: '', isError: false, ...overrides };
+}
+
+function makeEntry(overrides = {}) {
+    return { type: 'user', timestamp: '', content: vec([]), ...overrides };
+}
+
+function makeSession(overrides = {}) {
+    return { title: '', errors: vec([]), entries: vec([]), ...overrides };
+}
+
 function test(name, fn) {
     try {
         fn();
@@ -20,13 +32,10 @@ function test(name, fn) {
 console.log('renderer tests:');
 
 test('renderEntry renders user message with text content', () => {
-    const entry = {
-        type: 'user',
+    const entry = makeEntry({
         timestamp: '2026-03-25T06:20:15.000Z',
-        content: vec([
-            { type: 'text', text: 'hello world', toolName: '', toolInput: '', toolUseId: '', isError: false }
-        ])
-    };
+        content: vec([makeBlock({ text: 'hello world' })])
+    });
 
     const html = renderEntry(entry);
 
@@ -37,27 +46,21 @@ test('renderEntry renders user message with text content', () => {
 });
 
 test('renderContentBlock renders thinking block', () => {
-    const block = { type: 'thinking', text: 'let me think...', toolName: '', toolInput: '', toolUseId: '', isError: false };
-
-    const html = renderContentBlock(block);
+    const html = renderContentBlock(makeBlock({ type: 'thinking', text: 'let me think...' }));
 
     assert(html.includes('thinking-label'), 'should have thinking label');
     assert(html.includes('let me think...'), 'should contain thinking text');
 });
 
 test('renderContentBlock renders tool_use block', () => {
-    const block = { type: 'tool_use', text: '', toolName: 'Bash', toolInput: '{"command":"ls"}', toolUseId: 'toolu_123', isError: false };
-
-    const html = renderContentBlock(block);
+    const html = renderContentBlock(makeBlock({ type: 'tool_use', toolName: 'Bash', toolInput: '{"command":"ls"}', toolUseId: 'toolu_123' }));
 
     assert(html.includes('Bash'), 'should contain tool name');
     assert(html.includes('ls'), 'should contain command');
 });
 
 test('renderContentBlock renders tool_result with error', () => {
-    const block = { type: 'tool_result', text: 'command not found', toolName: '', toolInput: '', toolUseId: '', isError: true };
-
-    const html = renderContentBlock(block);
+    const html = renderContentBlock(makeBlock({ type: 'tool_result', text: 'command not found', isError: true }));
 
     assert(html.includes('Error'), 'should show Error label');
     assert(html.includes('command not found'), 'should contain error text');
@@ -65,14 +68,13 @@ test('renderContentBlock renders tool_result with error', () => {
 });
 
 test('renderSession renders title and entries', () => {
-    const session = {
+    const session = makeSession({
         title: 'My Session',
-        errors: vec([]),
         entries: vec([
-            { type: 'user', timestamp: '', content: vec([{ type: 'text', text: 'hi', toolName: '', toolInput: '', toolUseId: '', isError: false }]) },
-            { type: 'assistant', timestamp: '', content: vec([{ type: 'text', text: 'hello', toolName: '', toolInput: '', toolUseId: '', isError: false }]) }
+            makeEntry({ content: vec([makeBlock({ text: 'hi' })]) }),
+            makeEntry({ type: 'assistant', content: vec([makeBlock({ text: 'hello' })]) })
         ])
-    };
+    });
 
     const html = renderSession(session);
 
@@ -82,11 +84,9 @@ test('renderSession renders title and entries', () => {
 });
 
 test('renderSession renders parse errors', () => {
-    const session = {
-        title: '',
-        errors: vec([{ lineNumber: 3, rawLine: 'bad json' }]),
-        entries: vec([])
-    };
+    const session = makeSession({
+        errors: vec([{ lineNumber: 3, rawLine: 'bad json' }])
+    });
 
     const html = renderSession(session);
 
@@ -95,36 +95,17 @@ test('renderSession renders parse errors', () => {
     assert(html.includes('bad json'), 'should show raw line');
 });
 
-test('renderSession skips ai-title entry since title is shown separately', () => {
-    const session = {
-        title: 'My Title',
-        errors: vec([]),
-        entries: vec([
-            { type: 'ai-title', timestamp: '', content: vec([]) },
-            { type: 'user', timestamp: '', content: vec([{ type: 'text', text: 'hello', toolName: '', toolInput: '', toolUseId: '', isError: false }]) }
-        ])
-    };
-
-    const html = renderSession(session);
-
-    assert(!html.includes('ai-title'), 'should not render ai-title entry');
-    assert(html.includes('hello'), 'should still render user entry');
-});
-
 test('renderEntry hides metadata entries by default', () => {
-    const entry = { type: 'queue-operation', timestamp: '2026-03-25T06:20:14.840Z', content: vec([]) };
-
-    const html = renderEntry(entry);
+    const html = renderEntry(makeEntry({ type: 'queue-operation', timestamp: '2026-03-25T06:20:14.840Z' }));
 
     assert(html.includes('hidden'), 'metadata entry should have hidden style');
 });
 
 test('renderEntry formats timestamp as human-readable time', () => {
-    const entry = {
-        type: 'user',
+    const entry = makeEntry({
         timestamp: '2026-03-25T06:20:15.000Z',
-        content: vec([{ type: 'text', text: 'hi', toolName: '', toolInput: '', toolUseId: '', isError: false }])
-    };
+        content: vec([makeBlock({ text: 'hi' })])
+    });
 
     const html = renderEntry(entry);
 
@@ -140,8 +121,8 @@ test('entryClass returns metadata for non-message types', () => {
 });
 
 test('renderContentBlock shows tool description, hides input and result', () => {
-    const block = { type: 'tool_use', text: '', toolName: 'Bash', toolInput: '{"command":"ls","description":"List files"}', toolUseId: 'toolu_123', isError: false };
-    const toolResults = { 'toolu_123': { type: 'tool_result', text: 'file1.txt', toolName: '', toolInput: '', toolUseId: 'toolu_123', isError: false } };
+    const block = makeBlock({ type: 'tool_use', toolName: 'Bash', toolInput: '{"command":"ls","description":"List files"}', toolUseId: 'toolu_123' });
+    const toolResults = { 'toolu_123': makeBlock({ type: 'tool_result', text: 'file1.txt', toolUseId: 'toolu_123' }) };
 
     const html = renderContentBlock(block, toolResults);
 
@@ -150,7 +131,7 @@ test('renderContentBlock shows tool description, hides input and result', () => 
 });
 
 test('renderContentBlock renders Bash command in a copyable code element', () => {
-    const block = { type: 'tool_use', text: '', toolName: 'Bash', toolInput: '{"command":"ls -la","description":"List files"}', toolUseId: '', isError: false };
+    const block = makeBlock({ type: 'tool_use', toolName: 'Bash', toolInput: '{"command":"ls -la","description":"List files"}' });
 
     const html = renderContentBlock(block, {});
 
@@ -159,18 +140,16 @@ test('renderContentBlock renders Bash command in a copyable code element', () =>
 });
 
 test('renderSession groups tool_result under matching tool_use', () => {
-    const session = {
-        title: '',
-        errors: vec([]),
+    const session = makeSession({
         entries: vec([
-            { type: 'assistant', timestamp: '', content: vec([
-                { type: 'tool_use', text: '', toolName: 'Bash', toolInput: '{"command":"ls"}', toolUseId: 'toolu_123', isError: false }
-            ])},
-            { type: 'user', timestamp: '', content: vec([
-                { type: 'tool_result', text: 'file1.txt\nfile2.txt', toolName: '', toolInput: '', toolUseId: 'toolu_123', isError: false }
-            ])}
+            makeEntry({ type: 'assistant', content: vec([
+                makeBlock({ type: 'tool_use', toolName: 'Bash', toolInput: '{"command":"ls"}', toolUseId: 'toolu_123' })
+            ])}),
+            makeEntry({ content: vec([
+                makeBlock({ type: 'tool_result', text: 'file1.txt\nfile2.txt', toolUseId: 'toolu_123' })
+            ])})
         ])
-    };
+    });
 
     const html = renderSession(session);
 
@@ -180,16 +159,14 @@ test('renderSession groups tool_result under matching tool_use', () => {
 });
 
 test('renderSession keeps user entry when it has non-tool_result content', () => {
-    const session = {
-        title: '',
-        errors: vec([]),
+    const session = makeSession({
         entries: vec([
-            { type: 'user', timestamp: '', content: vec([
-                { type: 'text', text: 'hello', toolName: '', toolInput: '', toolUseId: '', isError: false },
-                { type: 'tool_result', text: 'output', toolName: '', toolInput: '', toolUseId: 'toolu_456', isError: false }
-            ])}
+            makeEntry({ content: vec([
+                makeBlock({ text: 'hello' }),
+                makeBlock({ type: 'tool_result', text: 'output', toolUseId: 'toolu_456' })
+            ])})
         ])
-    };
+    });
 
     const html = renderSession(session);
 
@@ -202,9 +179,13 @@ test('escapeHtml escapes special characters', () => {
 });
 
 test('renderContentBlock renders markdown in text blocks', () => {
-    const block = { type: 'text', text: 'hello **world**', toolName: '', toolInput: '', toolUseId: '', isError: false };
-
-    const html = renderContentBlock(block);
+    const html = renderContentBlock(makeBlock({ text: 'hello **world**' }));
 
     assert(html.includes('<strong>world</strong>'), 'should render bold markdown as <strong>');
+});
+
+test('renderToolResultBlock applies ok class to non-error results', () => {
+    const html = renderContentBlock(makeBlock({ type: 'tool_result', text: 'success' }));
+
+    assert(html.includes('tool-result-label ok'), 'should have ok class on label');
 });
