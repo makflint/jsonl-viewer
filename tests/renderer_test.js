@@ -1,4 +1,5 @@
 const assert = require('assert');
+global.marked = { parse: text => text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') };
 const { renderEntry, renderContentBlock, renderSession, entryClass, escapeHtml } = require('../web/renderer.js');
 
 function vec(arr) {
@@ -198,4 +199,12 @@ test('renderSession keeps user entry when it has non-tool_result content', () =>
 
 test('escapeHtml escapes special characters', () => {
     assert.strictEqual(escapeHtml('<script>alert("xss")</script>'), '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
+});
+
+test('renderContentBlock renders markdown in text blocks', () => {
+    const block = { type: 'text', text: 'hello **world**', toolName: '', toolInput: '', toolUseId: '', isError: false };
+
+    const html = renderContentBlock(block);
+
+    assert(html.includes('<strong>world</strong>'), 'should render bold markdown as <strong>');
 });
