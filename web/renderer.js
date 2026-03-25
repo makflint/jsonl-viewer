@@ -28,14 +28,20 @@ function renderContentBlock(block, toolResults) {
                 </div>`;
     }
     if (block.type === 'tool_use') {
-        let inputText = block.toolInput;
-        try { inputText = JSON.stringify(JSON.parse(block.toolInput), null, 2); } catch(e) {}
+        let inputObj = {};
+        try { inputObj = JSON.parse(block.toolInput); } catch(e) {}
+        const description = inputObj.description || '';
+        const inputText = JSON.stringify(inputObj, null, 2);
         const result = toolResults && toolResults[block.toolUseId];
         const resultHtml = result ? renderContentBlock(result, null) : '';
+        const descHtml = description ? `<div class="tool-use-description">${escapeHtml(description)}</div>` : '';
         return `<div class="content-block tool-use">
                     <div class="tool-use-label">${escapeHtml(block.toolName)}</div>
-                    <div class="tool-use-input">${escapeHtml(inputText)}</div>
-                    ${resultHtml}
+                    ${descHtml}
+                    <div class="tool-use-details">
+                        <div class="tool-use-input">${escapeHtml(inputText)}</div>
+                        ${resultHtml}
+                    </div>
                 </div>`;
     }
     if (block.type === 'tool_result') {
