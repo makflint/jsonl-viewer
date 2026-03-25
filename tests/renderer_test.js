@@ -189,3 +189,58 @@ test('renderToolResultBlock applies ok class to non-error results', () => {
 
     assert(html.includes('tool-result-label ok'), 'should have ok class on label');
 });
+
+test('renderMarkdown falls back to escapeHtml when marked is unavailable', () => {
+    const savedMarked = global.marked;
+    delete global.marked;
+    // Re-require to pick up absence — but renderMarkdown checks at call time
+    const { renderMarkdown } = require('../web/renderer.js');
+
+    const html = renderMarkdown('<b>bold</b>');
+
+    assert.strictEqual(html, '&lt;b&gt;bold&lt;/b&gt;');
+    global.marked = savedMarked;
+});
+
+test('renderToolUseBlock handles malformed toolInput gracefully', () => {
+    const block = makeBlock({ type: 'tool_use', toolName: 'Bash', toolInput: 'not json' });
+
+    const html = renderContentBlock(block);
+
+    assert(html.includes('Bash'), 'should still show tool name');
+    assert(html.includes('not json'), 'should show raw input as fallback');
+});
+
+test('renderEntry renders entry with zero content blocks', () => {
+    const entry = makeEntry({ type: 'assistant' });
+
+    const html = renderEntry(entry);
+
+    assert(html.includes('class="entry assistant"'), 'should have assistant class');
+    assert(!html.includes('entry-body'), 'should not have entry body');
+});
+
+test('renderEntry renders entry without timestamp', () => {
+    const entry = makeEntry({ content: vec([makeBlock({ text: 'hi' })]) });
+
+    const html = renderEntry(entry);
+
+    assert(!html.includes('timestamp'), 'should not have timestamp span');
+    assert(html.includes('hi'), 'should still show content');
+});
+
+test('indexToolResults does not mark mixed content entry as result-only', () => {
+    const session = makeSession({
+        entries: vec([
+            makeEntry({ content: vec([
+                makeBlock({ text: 'hello' }),
+                makeBlock({ type: 'tool_result', text: 'output', toolUseId: 'toolu_789' })
+            ])})
+        ])
+    });
+
+    const html = renderSession(session);
+
+    assert(html.includes('class="entry user"'), 'should keep entry with mixed content');
+    assert(html.includes('hello'), 'should show text content');
+});
