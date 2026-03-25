@@ -112,6 +112,28 @@ TEST_CASE("Parse session keeps all entries including metadata") {
     REQUIRE(session[3].type == "assistant");
 }
 
+TEST_CASE("Parse session skips empty lines") {
+    std::string jsonl =
+        R"({"type":"user","message":{"role":"user","content":[{"type":"text","text":"hello"}]}})" "\n"
+        "\n"
+        R"({"message":{"role":"assistant","content":[{"type":"text","text":"hi"}]}})";
+
+    auto session = parse_session(jsonl);
+
+    REQUIRE(session.size() == 2);
+}
+
+TEST_CASE("Parse session handles malformed line gracefully") {
+    std::string jsonl =
+        R"({"type":"user","message":{"role":"user","content":[{"type":"text","text":"hello"}]}})" "\n"
+        "not valid json" "\n"
+        R"({"message":{"role":"assistant","content":[{"type":"text","text":"hi"}]}})";
+
+    auto session = parse_session(jsonl);
+
+    REQUIRE(session.size() == 2);
+}
+
 TEST_CASE("Parse assistant message without top-level type falls back to message.role") {
     std::string line = R"({"parentUuid":"abc","message":{"role":"assistant","content":[{"type":"text","text":"hi"}]}})";
 
