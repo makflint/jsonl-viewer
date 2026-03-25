@@ -7,9 +7,11 @@ Browser-based pretty viewer for Claude Code JSONL session files.
 - **C++17** — core parser logic
 - **Emscripten** — compile to WebAssembly for browser
 - **Catch2** — test framework (amalgamated, in `third_party/`)
-- **CMake** — build system
+- **CMake** — build system (single `CMakeLists.txt` with two configurations: native for TDD, Emscripten for WASM)
 
 ## Build & Test Commands
+
+The same `CMakeLists.txt` serves both builds. When invoked via `emcmake`, it detects Emscripten and builds the WASM target. Otherwise it builds the native Catch2 test runner.
 
 ```bash
 # Native build (for TDD)
