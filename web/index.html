@@ -111,6 +111,19 @@
         .tool-result-label.ok { color: #a6e3a1; }
         .text-block { white-space: pre-wrap; line-height: 1.5; }
         .timestamp { color: #6c7086; font-size: 0.8em; }
+        .entry.hidden { display: none; }
+        body.show-metadata .entry.hidden { display: block; }
+        .toggle-metadata {
+            background: #313244;
+            color: #cdd6f4;
+            border: 1px solid #585b70;
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 0.85em;
+            margin-bottom: 16px;
+        }
+        .toggle-metadata:hover { border-color: #cba6f7; }
         .errors {
             background: #45475a;
             border-left: 3px solid #f38ba8;
@@ -127,6 +140,7 @@
         <p>Drop a <strong>.jsonl</strong> session file here, or click to browse</p>
         <input type="file" id="fileInput" accept=".jsonl">
     </div>
+    <button class="toggle-metadata" id="toggleMetadata" style="display:none">Show metadata</button>
     <div id="output"></div>
 
     <script src="parser.js"></script>
@@ -159,9 +173,17 @@
             reader.readAsText(file);
         }
 
+        const toggleBtn = document.getElementById('toggleMetadata');
+        toggleBtn.addEventListener('click', () => {
+            document.body.classList.toggle('show-metadata');
+            toggleBtn.textContent = document.body.classList.contains('show-metadata')
+                ? 'Hide metadata' : 'Show metadata';
+        });
+
         function displaySession(jsonl) {
             const session = parserModule.parseSession(jsonl);
             output.innerHTML = renderSession(session);
+            toggleBtn.style.display = '';
             document.querySelectorAll('.thinking, .tool-use').forEach(el => {
                 el.addEventListener('click', () => el.classList.toggle('open'));
             });

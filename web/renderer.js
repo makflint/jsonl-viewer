@@ -40,10 +40,11 @@ function renderContentBlock(block) {
 
 function renderEntry(entry) {
     const cls = entryClass(entry.type);
+    const hidden = cls === 'metadata' ? ' hidden' : '';
     const timestamp = entry.timestamp
         ? `<span class="timestamp">${escapeHtml(entry.timestamp)}</span>`
         : '';
-    let html = `<div class="entry ${cls}">`;
+    let html = `<div class="entry ${cls}${hidden}">`;
     html += `<div class="entry-header"><span>${escapeHtml(entry.type)}</span>${timestamp}</div>`;
 
     if (entry.content.size() > 0) {
