@@ -138,6 +138,45 @@ test('entryClass returns metadata for non-message types', () => {
     assert.strictEqual(entryClass('file-history-snapshot'), 'metadata');
 });
 
+test('renderSession groups tool_result under matching tool_use', () => {
+    const session = {
+        title: '',
+        errors: vec([]),
+        entries: vec([
+            { type: 'assistant', timestamp: '', content: vec([
+                { type: 'tool_use', text: '', toolName: 'Bash', toolInput: '{"command":"ls"}', toolUseId: 'toolu_123', isError: false }
+            ])},
+            { type: 'user', timestamp: '', content: vec([
+                { type: 'tool_result', text: 'file1.txt\nfile2.txt', toolName: '', toolInput: '', toolUseId: 'toolu_123', isError: false }
+            ])}
+        ])
+    };
+
+    const html = renderSession(session);
+
+    assert(html.includes('Bash'), 'should show tool name');
+    assert(html.includes('file1.txt'), 'should show tool result');
+    assert(!html.includes('class="entry user"'), 'should not render user entry for tool_result-only messages');
+});
+
+test('renderSession keeps user entry when it has non-tool_result content', () => {
+    const session = {
+        title: '',
+        errors: vec([]),
+        entries: vec([
+            { type: 'user', timestamp: '', content: vec([
+                { type: 'text', text: 'hello', toolName: '', toolInput: '', toolUseId: '', isError: false },
+                { type: 'tool_result', text: 'output', toolName: '', toolInput: '', toolUseId: 'toolu_456', isError: false }
+            ])}
+        ])
+    };
+
+    const html = renderSession(session);
+
+    assert(html.includes('class="entry user"'), 'should keep user entry');
+    assert(html.includes('hello'), 'should show text content');
+});
+
 test('escapeHtml escapes special characters', () => {
     assert.strictEqual(escapeHtml('<script>alert("xss")</script>'), '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
 });
