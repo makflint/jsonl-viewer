@@ -12,6 +12,7 @@ if(EMSCRIPTEN)
         -sMODULARIZE=1
         -sEXPORT_NAME=ParserModule
         -sEXPORT_ES6=0
+        -sNO_DISABLE_EXCEPTION_CATCHING
     )
     set_target_properties(parser PROPERTIES
         SUFFIX ".js"
