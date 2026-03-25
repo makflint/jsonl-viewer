@@ -27,16 +27,15 @@ function renderContentBlock(block) {
                 </div>`;
     }
     if (block.type === 'tool_result') {
-        const errCls = block.isError ? 'error' : 'ok';
-        return `<div class="content-block tool-result ${block.isError ? 'error' : ''}">
-                    <div class="tool-result-label ${errCls}">${block.isError ? 'Error' : 'Result'}</div>
+        const label = block.isError ? 'Error' : 'Result';
+        const errorClass = block.isError ? ' error' : '';
+        return `<div class="content-block tool-result${errorClass}">
+                    <div class="tool-result-label${errorClass}">${label}</div>
                     ${escapeHtml(block.text)}
                 </div>`;
     }
-    if (block.type === 'text') {
-        return `<div class="content-block text-block">${escapeHtml(block.text)}</div>`;
-    }
-    return `<div class="content-block">${escapeHtml(block.text)}</div>`;
+    const blockClass = block.type === 'text' ? ' text-block' : '';
+    return `<div class="content-block${blockClass}">${escapeHtml(block.text)}</div>`;
 }
 
 function renderEntry(entry) {
