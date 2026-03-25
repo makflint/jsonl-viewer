@@ -17,6 +17,7 @@ struct ContentBlock {
 
 struct SessionEntry {
     std::string type;
+    std::string timestamp;
     std::vector<ContentBlock> content;
 };
 
@@ -61,7 +62,11 @@ inline std::vector<ContentBlock> extract_content(const json& entry) {
 
 inline SessionEntry parse_jsonl_line(const std::string& line) {
     auto parsed = json::parse(line);
-    return SessionEntry{extract_entry_type(parsed), extract_content(parsed)};
+    SessionEntry entry;
+    entry.type = extract_entry_type(parsed);
+    entry.timestamp = parsed.value("timestamp", "");
+    entry.content = extract_content(parsed);
+    return entry;
 }
 
 inline std::vector<SessionEntry> parse_session(const std::string& jsonl) {
