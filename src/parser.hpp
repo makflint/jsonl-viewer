@@ -31,6 +31,9 @@ inline std::string extract_block_text(const json& block) {
     if (text.empty()) {
         text = block.value("thinking", "");
     }
+    if (text.empty() && block.contains("content") && block["content"].is_string()) {
+        text = block["content"].get<std::string>();
+    }
     return text;
 }
 
@@ -42,9 +45,6 @@ inline ContentBlock parse_content_block(const json& block) {
     result.tool_input = block.contains("input") ? block["input"].dump() : "";
     result.tool_use_id = block.value("tool_use_id", "");
     result.is_error = block.value("is_error", false);
-    if (result.text.empty() && block.contains("content") && block["content"].is_string()) {
-        result.text = block["content"].get<std::string>();
-    }
     return result;
 }
 
