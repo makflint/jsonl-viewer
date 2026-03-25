@@ -20,6 +20,24 @@ function entryClass(type) {
     return 'metadata';
 }
 
+function highlightCode(code, language) {
+    if (typeof hljs !== 'undefined') return hljs.highlight(code, { language }).value;
+    return escapeHtml(code);
+}
+
+function highlightCommand(command) {
+    if (typeof hljs === 'undefined') return escapeHtml(command);
+    var match = command.match(/^(.*?python3?\s+-c\s+)(["'])([\s\S]*)\2([\s\S]*)$/);
+    if (match) {
+        return highlightCode(match[1], 'bash')
+            + match[2]
+            + highlightCode(match[3], 'python')
+            + match[2]
+            + highlightCode(match[4], 'bash');
+    }
+    return highlightCode(command, 'bash');
+}
+
 function renderToolUseBlock(block, toolIndex) {
     let inputObj = {};
     let inputText = block.toolInput;
@@ -32,7 +50,7 @@ function renderToolUseBlock(block, toolIndex) {
     const result = toolIndex && toolIndex.getResult(block.toolUseId);
     const resultHtml = result ? renderToolResultBlock(result) : '';
     const descHtml = description ? `<div class="tool-use-description">${escapeHtml(description)}</div>` : '';
-    const commandHtml = command ? `<code class="tool-use-command">${escapeHtml(command)}</code>` : '';
+    const commandHtml = command ? `<code class="tool-use-command">${highlightCommand(command)}</code>` : '';
     return `<div class="content-block tool-use">
                 <div class="tool-use-label">${escapeHtml(block.toolName)}</div>
                 ${descHtml}
