@@ -32,13 +32,20 @@ inline std::string extract_block_text(const json& block) {
     return text;
 }
 
+inline ContentBlock parse_content_block(const json& block) {
+    ContentBlock result;
+    result.type = block.value("type", "");
+    result.text = extract_block_text(block);
+    result.tool_name = block.value("name", "");
+    result.tool_input = block.contains("input") ? block["input"].dump() : "";
+    return result;
+}
+
 inline std::vector<ContentBlock> extract_content(const json& entry) {
     std::vector<ContentBlock> blocks;
     if (entry.contains("message") && entry["message"].contains("content")) {
         for (const auto& block : entry["message"]["content"]) {
-            std::string tool_name = block.value("name", "");
-            std::string tool_input = block.contains("input") ? block["input"].dump() : "";
-            blocks.push_back({block.value("type", ""), extract_block_text(block), tool_name, tool_input});
+            blocks.push_back(parse_content_block(block));
         }
     }
     return blocks;
