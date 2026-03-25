@@ -20,6 +20,33 @@ function entryClass(type) {
     return 'metadata';
 }
 
+function renderToolUseBlock(block, toolResults) {
+    let inputObj = {};
+    try { inputObj = JSON.parse(block.toolInput); } catch(e) {}
+    const description = inputObj.description || '';
+    const inputText = JSON.stringify(inputObj, null, 2);
+    const result = toolResults && toolResults[block.toolUseId];
+    const resultHtml = result ? renderToolResultBlock(result) : '';
+    const descHtml = description ? `<div class="tool-use-description">${escapeHtml(description)}</div>` : '';
+    return `<div class="content-block tool-use">
+                <div class="tool-use-label">${escapeHtml(block.toolName)}</div>
+                ${descHtml}
+                <div class="tool-use-details">
+                    <div class="tool-use-input">${escapeHtml(inputText)}</div>
+                    ${resultHtml}
+                </div>
+            </div>`;
+}
+
+function renderToolResultBlock(block) {
+    const label = block.isError ? 'Error' : 'Result';
+    const errorClass = block.isError ? ' error' : '';
+    return `<div class="content-block tool-result${errorClass}">
+                <div class="tool-result-label${errorClass}">${label}</div>
+                ${escapeHtml(block.text)}
+            </div>`;
+}
+
 function renderContentBlock(block, toolResults) {
     if (block.type === 'thinking') {
         return `<div class="content-block thinking">
@@ -27,31 +54,8 @@ function renderContentBlock(block, toolResults) {
                     <div class="thinking-content">${escapeHtml(block.text)}</div>
                 </div>`;
     }
-    if (block.type === 'tool_use') {
-        let inputObj = {};
-        try { inputObj = JSON.parse(block.toolInput); } catch(e) {}
-        const description = inputObj.description || '';
-        const inputText = JSON.stringify(inputObj, null, 2);
-        const result = toolResults && toolResults[block.toolUseId];
-        const resultHtml = result ? renderContentBlock(result, null) : '';
-        const descHtml = description ? `<div class="tool-use-description">${escapeHtml(description)}</div>` : '';
-        return `<div class="content-block tool-use">
-                    <div class="tool-use-label">${escapeHtml(block.toolName)}</div>
-                    ${descHtml}
-                    <div class="tool-use-details">
-                        <div class="tool-use-input">${escapeHtml(inputText)}</div>
-                        ${resultHtml}
-                    </div>
-                </div>`;
-    }
-    if (block.type === 'tool_result') {
-        const label = block.isError ? 'Error' : 'Result';
-        const errorClass = block.isError ? ' error' : '';
-        return `<div class="content-block tool-result${errorClass}">
-                    <div class="tool-result-label${errorClass}">${label}</div>
-                    ${escapeHtml(block.text)}
-                </div>`;
-    }
+    if (block.type === 'tool_use') return renderToolUseBlock(block, toolResults);
+    if (block.type === 'tool_result') return renderToolResultBlock(block);
     const blockClass = block.type === 'text' ? ' text-block' : '';
     return `<div class="content-block${blockClass}">${escapeHtml(block.text)}</div>`;
 }
