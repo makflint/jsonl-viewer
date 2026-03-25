@@ -94,6 +94,22 @@ test('renderSession renders parse errors', () => {
     assert(html.includes('bad json'), 'should show raw line');
 });
 
+test('renderSession skips ai-title entry since title is shown separately', () => {
+    const session = {
+        title: 'My Title',
+        errors: vec([]),
+        entries: vec([
+            { type: 'ai-title', timestamp: '', content: vec([]) },
+            { type: 'user', timestamp: '', content: vec([{ type: 'text', text: 'hello', toolName: '', toolInput: '', toolUseId: '', isError: false }]) }
+        ])
+    };
+
+    const html = renderSession(session);
+
+    assert(!html.includes('ai-title'), 'should not render ai-title entry');
+    assert(html.includes('hello'), 'should still render user entry');
+});
+
 test('entryClass returns metadata for non-message types', () => {
     assert.strictEqual(entryClass('user'), 'user');
     assert.strictEqual(entryClass('assistant'), 'assistant');

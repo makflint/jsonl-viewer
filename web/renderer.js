@@ -77,7 +77,9 @@ function renderSession(session) {
     }
 
     for (let i = 0; i < session.entries.size(); i++) {
-        html += renderEntry(session.entries.get(i));
+        const entry = session.entries.get(i);
+        if (entry.type === 'ai-title') continue;
+        html += renderEntry(entry);
     }
 
     return html;
