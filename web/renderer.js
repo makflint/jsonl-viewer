@@ -20,7 +20,7 @@ function entryClass(type) {
     return 'metadata';
 }
 
-function renderToolUseBlock(block, toolResults) {
+function renderToolUseBlock(block, toolIndex) {
     let inputObj = {};
     let inputText = block.toolInput;
     try {
@@ -29,7 +29,7 @@ function renderToolUseBlock(block, toolResults) {
     } catch(e) {}
     const description = inputObj.description || '';
     const command = inputObj.command || '';
-    const result = toolResults && toolResults[block.toolUseId];
+    const result = toolIndex && toolIndex.getResult(block.toolUseId);
     const resultHtml = result ? renderToolResultBlock(result) : '';
     const descHtml = description ? `<div class="tool-use-description">${escapeHtml(description)}</div>` : '';
     const commandHtml = command ? `<code class="tool-use-command">${escapeHtml(command)}</code>` : '';
@@ -72,14 +72,14 @@ function renderTextBlock(block) {
     return `<div class="content-block${blockClass}">${renderMarkdown(block.text)}</div>`;
 }
 
-function renderContentBlock(block, toolResults) {
+function renderContentBlock(block, toolIndex) {
     if (block.type === 'thinking') return renderThinkingBlock(block);
-    if (block.type === 'tool_use') return renderToolUseBlock(block, toolResults);
+    if (block.type === 'tool_use') return renderToolUseBlock(block, toolIndex);
     if (block.type === 'tool_result') return renderToolResultBlock(block);
     return renderTextBlock(block);
 }
 
-function renderEntry(entry, toolResults) {
+function renderEntry(entry, toolIndex) {
     const cls = entryClass(entry.type);
     const hidden = cls === 'metadata' ? ' hidden' : '';
     const timestamp = entry.timestamp
@@ -91,7 +91,7 @@ function renderEntry(entry, toolResults) {
     if (entry.content.size() > 0) {
         html += '<div class="entry-body">';
         for (let i = 0; i < entry.content.size(); i++) {
-            html += renderContentBlock(entry.content.get(i), toolResults);
+            html += renderContentBlock(entry.content.get(i), toolIndex);
         }
         html += '</div>';
     }
@@ -100,26 +100,28 @@ function renderEntry(entry, toolResults) {
     return html;
 }
 
-function buildToolResultMap(entries) {
-    const map = {};
+function indexToolResults(entries) {
+    const resultMap = {};
+    const resultOnlyIndices = new Set();
+
     for (let i = 0; i < entries.size(); i++) {
         const entry = entries.get(i);
+        let allToolResults = entry.content.size() > 0;
         for (let j = 0; j < entry.content.size(); j++) {
             const block = entry.content.get(j);
-            if (block.type === 'tool_result' && block.toolUseId) {
-                map[block.toolUseId] = block;
+            if (block.type === 'tool_result') {
+                if (block.toolUseId) resultMap[block.toolUseId] = block;
+            } else {
+                allToolResults = false;
             }
         }
+        if (allToolResults) resultOnlyIndices.add(i);
     }
-    return map;
-}
 
-function isToolResultOnly(entry) {
-    if (entry.content.size() === 0) return false;
-    for (let i = 0; i < entry.content.size(); i++) {
-        if (entry.content.get(i).type !== 'tool_result') return false;
-    }
-    return true;
+    return {
+        getResult(toolUseId) { return resultMap[toolUseId]; },
+        isResultOnlyEntry(index) { return resultOnlyIndices.has(index); }
+    };
 }
 
 function renderSession(session) {
@@ -139,14 +141,13 @@ function renderSession(session) {
         html += '</div>';
     }
 
-    const toolResults = buildToolResultMap(session.entries);
+    const toolIndex = indexToolResults(session.entries);
 
     for (let i = 0; i < session.entries.size(); i++) {
-        const entry = session.entries.get(i);
         // Tool results are already nested inside their matching tool_use block,
         // so skip entries that contain only tool_result blocks
-        if (isToolResultOnly(entry)) continue;
-        html += renderEntry(entry, toolResults);
+        if (toolIndex.isResultOnlyEntry(i)) continue;
+        html += renderEntry(session.entries.get(i), toolIndex);
     }
 
     return html;

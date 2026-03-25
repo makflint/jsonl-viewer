@@ -122,9 +122,9 @@ test('entryClass returns metadata for non-message types', () => {
 
 test('renderContentBlock shows tool description, hides input and result', () => {
     const block = makeBlock({ type: 'tool_use', toolName: 'Bash', toolInput: '{"command":"ls","description":"List files"}', toolUseId: 'toolu_123' });
-    const toolResults = { 'toolu_123': makeBlock({ type: 'tool_result', text: 'file1.txt', toolUseId: 'toolu_123' }) };
+    const toolIndex = { getResult: id => id === 'toolu_123' ? makeBlock({ type: 'tool_result', text: 'file1.txt', toolUseId: 'toolu_123' }) : undefined };
 
-    const html = renderContentBlock(block, toolResults);
+    const html = renderContentBlock(block, toolIndex);
 
     assert(html.includes('List files'), 'should show description');
     assert(html.includes('tool-use-details'), 'should have collapsible details wrapper');
@@ -133,7 +133,7 @@ test('renderContentBlock shows tool description, hides input and result', () => 
 test('renderContentBlock renders Bash command in a copyable code element', () => {
     const block = makeBlock({ type: 'tool_use', toolName: 'Bash', toolInput: '{"command":"ls -la","description":"List files"}' });
 
-    const html = renderContentBlock(block, {});
+    const html = renderContentBlock(block, { getResult: () => undefined });
 
     assert(html.includes('<code'), 'should render command in a code element');
     assert(html.includes('ls -la'), 'should contain the command');
