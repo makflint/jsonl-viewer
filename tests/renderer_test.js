@@ -118,6 +118,19 @@ test('renderEntry hides metadata entries by default', () => {
     assert(html.includes('hidden'), 'metadata entry should have hidden style');
 });
 
+test('renderEntry formats timestamp as human-readable time', () => {
+    const entry = {
+        type: 'user',
+        timestamp: '2026-03-25T06:20:15.000Z',
+        content: vec([{ type: 'text', text: 'hi', toolName: '', toolInput: '', toolUseId: '', isError: false }])
+    };
+
+    const html = renderEntry(entry);
+
+    assert(!html.includes('2026-03-25T06:20:15.000Z'), 'should not show raw ISO timestamp');
+    assert(html.includes('06:20:15'), 'should show formatted time');
+});
+
 test('entryClass returns metadata for non-message types', () => {
     assert.strictEqual(entryClass('user'), 'user');
     assert.strictEqual(entryClass('assistant'), 'assistant');
