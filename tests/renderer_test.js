@@ -31,7 +31,7 @@ test('renderEntry renders user message with text content', () => {
 
     assert(html.includes('user'), 'should contain entry type');
     assert(html.includes('hello world'), 'should contain text');
-    assert(html.includes('2026-03-25'), 'should contain timestamp');
+    assert(html.includes('06:20:15'), 'should contain formatted timestamp');
     assert(html.includes('class="entry user"'), 'should have user class');
 });
 

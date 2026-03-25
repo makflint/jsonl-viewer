@@ -6,6 +6,15 @@ function escapeHtml(text) {
         .replace(/"/g, '&quot;');
 }
 
+function formatTimestamp(iso) {
+    const date = new Date(iso);
+    if (isNaN(date)) return iso;
+    const hh = String(date.getUTCHours()).padStart(2, '0');
+    const mm = String(date.getUTCMinutes()).padStart(2, '0');
+    const ss = String(date.getUTCSeconds()).padStart(2, '0');
+    return `${hh}:${mm}:${ss}`;
+}
+
 function entryClass(type) {
     if (type === 'user' || type === 'assistant') return type;
     return 'metadata';
@@ -42,7 +51,7 @@ function renderEntry(entry) {
     const cls = entryClass(entry.type);
     const hidden = cls === 'metadata' ? ' hidden' : '';
     const timestamp = entry.timestamp
-        ? `<span class="timestamp">${escapeHtml(entry.timestamp)}</span>`
+        ? `<span class="timestamp">${formatTimestamp(entry.timestamp)}</span>`
         : '';
     let html = `<div class="entry ${cls}${hidden}">`;
     html += `<div class="entry-header"><span>${escapeHtml(entry.type)}</span>${timestamp}</div>`;
