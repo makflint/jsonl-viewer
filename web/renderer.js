@@ -27,14 +27,24 @@ function highlightCode(code, language) {
 
 function highlightCommand(command) {
     if (typeof hljs === 'undefined') return escapeHtml(command);
-    var match = command.match(/^(.*?python3?\s+-c\s+)(["'])([\s\S]*)\2([\s\S]*)$/);
-    if (match) {
-        return highlightCode(match[1], 'bash')
-            + match[2]
-            + highlightCode(match[3], 'python')
-            + match[2]
-            + highlightCode(match[4], 'bash');
+
+    var inlineMatch = command.match(/^(.*?python3?\s+-c\s+)(["'])([\s\S]*)\2([\s\S]*)$/);
+    if (inlineMatch) {
+        return highlightCode(inlineMatch[1], 'bash')
+            + inlineMatch[2]
+            + highlightCode(inlineMatch[3], 'python')
+            + inlineMatch[2]
+            + highlightCode(inlineMatch[4], 'bash');
     }
+
+    var heredocMatch = command.match(/^(.*?python3?\s*<<\s*'?(\w+)'?\n)([\s\S]*?)\n\2(.*)$/);
+    if (heredocMatch) {
+        return highlightCode(heredocMatch[1], 'bash')
+            + highlightCode(heredocMatch[3], 'python')
+            + '\n' + heredocMatch[2]
+            + highlightCode(heredocMatch[4], 'bash');
+    }
+
     return highlightCode(command, 'bash');
 }
 

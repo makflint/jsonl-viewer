@@ -304,6 +304,16 @@ test('renderToolUseBlock highlights python -c inline code', () => {
     assert(html.includes('print(42)'), 'should contain python code');
 });
 
+test('renderToolUseBlock highlights python heredoc', () => {
+    const command = "python3 << 'PYEOF'\nimport json, sys\nprint('hello')\nPYEOF";
+    const block = makeBlock({ type: 'tool_use', toolName: 'Bash', toolInput: JSON.stringify({ command }), toolUseId: '' });
+
+    const html = renderContentBlock(block);
+
+    assert(html.includes('hljs-python'), 'should highlight python portion');
+    assert(html.includes('import'), 'should contain python code');
+});
+
 test('renderToolUseBlock highlights regular command without python -c as bash', () => {
     const command = 'ls -la /tmp';
     const block = makeBlock({ type: 'tool_use', toolName: 'Bash', toolInput: JSON.stringify({ command }), toolUseId: '' });
