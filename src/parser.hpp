@@ -21,9 +21,15 @@ struct SessionEntry {
     std::vector<ContentBlock> content;
 };
 
+struct ParseError {
+    int line_number;
+    std::string raw_line;
+};
+
 struct Session {
     std::string title;
     std::vector<SessionEntry> entries;
+    std::vector<ParseError> errors;
     SessionEntry& operator[](size_t i) { return entries[i]; }
     const SessionEntry& operator[](size_t i) const { return entries[i]; }
     size_t size() const { return entries.size(); }
@@ -84,10 +90,15 @@ inline Session parse_session(const std::string& jsonl) {
     Session session;
     std::istringstream stream(jsonl);
     std::string line;
+    int line_number = 0;
     while (std::getline(stream, line)) {
+        ++line_number;
         if (line.empty()) continue;
         auto parsed = json::parse(line, nullptr, false);
-        if (parsed.is_discarded()) continue;
+        if (parsed.is_discarded()) {
+            session.errors.push_back({line_number, line});
+            continue;
+        }
         std::string type = parsed.value("type", "");
         if (type == "ai-title") {
             session.title = parsed.value("aiTitle", "");
