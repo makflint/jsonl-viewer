@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code Session Viewer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+            background: #1e1e2e;
+            color: #cdd6f4;
+            padding: 20px;
+        }
+        h1 { color: #cba6f7; margin-bottom: 16px; font-size: 1.4em; }
+        .drop-zone {
+            border: 2px dashed #585b70;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: border-color 0.2s;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #cba6f7;
+        }
+        .drop-zone input { display: none; }
+        .session-title {
+            color: #f5c2e7;
+            font-size: 1.1em;
+            margin-bottom: 16px;
+            padding: 8px 12px;
+            background: #313244;
+            border-radius: 6px;
+        }
+        .entry {
+            margin-bottom: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .entry-header {
+            padding: 8px 12px;
+            font-weight: bold;
+            font-size: 0.85em;
+            display: flex;
+            justify-content: space-between;
+        }
+        .entry-body { padding: 10px 12px; }
+        .entry.user .entry-header { background: #1e66f5; color: #fff; }
+        .entry.user .entry-body { background: #1e3a5f; }
+        .entry.assistant .entry-header { background: #40a02b; color: #fff; }
+        .entry.assistant .entry-body { background: #1e3a2a; }
+        .entry.metadata .entry-header { background: #585b70; color: #cdd6f4; }
+        .entry.metadata .entry-body { background: #313244; }
+        .content-block { margin-bottom: 8px; }
+        .content-block:last-child { margin-bottom: 0; }
+        .thinking {
+            background: #45475a;
+            border-left: 3px solid #f9e2af;
+            padding: 8px 10px;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .thinking-label {
+            color: #f9e2af;
+            font-weight: bold;
+            font-size: 0.8em;
+            margin-bottom: 4px;
+        }
+        .thinking-content { display: none; white-space: pre-wrap; }
+        .thinking.open .thinking-content { display: block; }
+        .tool-use {
+            background: #313244;
+            border-left: 3px solid #89b4fa;
+            padding: 8px 10px;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+        }
+        .tool-use-label {
+            color: #89b4fa;
+            font-weight: bold;
+            font-size: 0.8em;
+        }
+        .tool-use-input {
+            display: none;
+            white-space: pre-wrap;
+            font-size: 0.85em;
+            margin-top: 6px;
+            color: #a6adc8;
+        }
+        .tool-use.open .tool-use-input { display: block; }
+        .tool-result {
+            background: #313244;
+            border-left: 3px solid #a6e3a1;
+            padding: 8px 10px;
+            border-radius: 0 4px 4px 0;
+            white-space: pre-wrap;
+            font-size: 0.85em;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .tool-result.error { border-left-color: #f38ba8; }
+        .tool-result-label {
+            font-weight: bold;
+            font-size: 0.8em;
+            margin-bottom: 4px;
+        }
+        .tool-result-label.error { color: #f38ba8; }
+        .tool-result-label.ok { color: #a6e3a1; }
+        .text-block { white-space: pre-wrap; line-height: 1.5; }
+        .timestamp { color: #6c7086; font-size: 0.8em; }
+        .errors {
+            background: #45475a;
+            border-left: 3px solid #f38ba8;
+            padding: 10px 12px;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 12px;
+            color: #f38ba8;
+        }
+    </style>
+</head>
+<body>
+    <h1>Claude Code Session Viewer</h1>
+    <div class="drop-zone" id="dropZone">
+        <p>Drop a <strong>.jsonl</strong> session file here, or click to browse</p>
+        <input type="file" id="fileInput" accept=".jsonl">
+    </div>
+    <div id="output"></div>
+
+    <script src="parser.js"></script>
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const output = document.getElementById('output');
+        let parserModule = null;
+
+        ParserModule().then(mod => { parserModule = mod; });
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+
+        function handleFile(file) {
+            if (!file || !parserModule) return;
+            const reader = new FileReader();
+            reader.onload = () => renderSession(reader.result);
+            reader.readAsText(file);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function renderSession(jsonl) {
+            const session = parserModule.parseSession(jsonl);
+            let html = '';
+
+            if (session.title) {
+                html += `<div class="session-title">${escapeHtml(session.title)}</div>`;
+            }
+
+            if (session.errors.size() > 0) {
+                html += '<div class="errors">';
+                html += `<strong>${session.errors.size()} parse error(s):</strong><br>`;
+                for (let i = 0; i < session.errors.size(); i++) {
+                    const err = session.errors.get(i);
+                    html += `Line ${err.lineNumber}: ${escapeHtml(err.rawLine)}<br>`;
+                }
+                html += '</div>';
+            }
+
+            for (let i = 0; i < session.entries.size(); i++) {
+                const entry = session.entries.get(i);
+                html += renderEntry(entry);
+            }
+
+            output.innerHTML = html;
+            document.querySelectorAll('.thinking, .tool-use').forEach(el => {
+                el.addEventListener('click', () => el.classList.toggle('open'));
+            });
+        }
+
+        function entryClass(type) {
+            if (type === 'user' || type === 'assistant') return type;
+            return 'metadata';
+        }
+
+        function renderEntry(entry) {
+            const cls = entryClass(entry.type);
+            const timestamp = entry.timestamp
+                ? `<span class="timestamp">${escapeHtml(entry.timestamp)}</span>`
+                : '';
+            let html = `<div class="entry ${cls}">`;
+            html += `<div class="entry-header"><span>${escapeHtml(entry.type)}</span>${timestamp}</div>`;
+
+            if (entry.content.size() > 0) {
+                html += '<div class="entry-body">';
+                for (let j = 0; j < entry.content.size(); j++) {
+                    html += renderContentBlock(entry.content.get(j));
+                }
+                html += '</div>';
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        function renderContentBlock(block) {
+            if (block.type === 'thinking') {
+                return `<div class="content-block thinking">
+                    <div class="thinking-label">Thinking</div>
+                    <div class="thinking-content">${escapeHtml(block.text)}</div>
+                </div>`;
+            }
+            if (block.type === 'tool_use') {
+                let inputText = block.toolInput;
+                try { inputText = JSON.stringify(JSON.parse(block.toolInput), null, 2); } catch(e) {}
+                return `<div class="content-block tool-use">
+                    <div class="tool-use-label">${escapeHtml(block.toolName)}</div>
+                    <div class="tool-use-input">${escapeHtml(inputText)}</div>
+                </div>`;
+            }
+            if (block.type === 'tool_result') {
+                const errCls = block.isError ? 'error' : 'ok';
+                return `<div class="content-block tool-result ${block.isError ? 'error' : ''}">
+                    <div class="tool-result-label ${errCls}">${block.isError ? 'Error' : 'Result'}</div>
+                    ${escapeHtml(block.text)}
+                </div>`;
+            }
+            if (block.type === 'text') {
+                return `<div class="content-block text-block">${escapeHtml(block.text)}</div>`;
+            }
+            return `<div class="content-block">${escapeHtml(block.text)}</div>`;
+        }
+    </script>
+</body>
+</html>
