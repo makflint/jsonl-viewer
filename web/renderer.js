@@ -24,13 +24,16 @@ function renderToolUseBlock(block, toolResults) {
     let inputObj = {};
     try { inputObj = JSON.parse(block.toolInput); } catch(e) {}
     const description = inputObj.description || '';
+    const command = inputObj.command || '';
     const inputText = JSON.stringify(inputObj, null, 2);
     const result = toolResults && toolResults[block.toolUseId];
     const resultHtml = result ? renderToolResultBlock(result) : '';
     const descHtml = description ? `<div class="tool-use-description">${escapeHtml(description)}</div>` : '';
+    const commandHtml = command ? `<code class="tool-use-command">${escapeHtml(command)}</code>` : '';
     return `<div class="content-block tool-use">
                 <div class="tool-use-label">${escapeHtml(block.toolName)}</div>
                 ${descHtml}
+                ${commandHtml}
                 <div class="tool-use-details">
                     <div class="tool-use-input">${escapeHtml(inputText)}</div>
                     ${resultHtml}
