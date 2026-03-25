@@ -229,6 +229,54 @@ test('renderEntry renders entry without timestamp', () => {
     assert(html.includes('hi'), 'should still show content');
 });
 
+test('formatTimestamp returns raw string for invalid date', () => {
+    const { formatTimestamp } = require('../web/renderer.js');
+
+    assert.strictEqual(formatTimestamp('not-a-date'), 'not-a-date');
+});
+
+test('renderMarkdown uses DOMPurify when available', () => {
+    global.DOMPurify = { sanitize: html => html.replace(/<script.*?<\/script>/g, '') };
+    const { renderMarkdown } = require('../web/renderer.js');
+
+    const html = renderMarkdown('hello **world**');
+
+    assert(html.includes('<strong>world</strong>'), 'should still render markdown');
+    delete global.DOMPurify;
+});
+
+test('renderEntry classifies unknown type as metadata', () => {
+    const entry = makeEntry({ type: 'unknown', content: vec([makeBlock({ text: 'data' })]) });
+
+    const html = renderEntry(entry);
+
+    assert(html.includes('metadata'), 'should have metadata class');
+    assert(html.includes('hidden'), 'should be hidden by default');
+});
+
+test('renderToolUseBlock with empty toolInput shows empty details', () => {
+    const block = makeBlock({ type: 'tool_use', toolName: 'Read', toolInput: '' });
+
+    const html = renderContentBlock(block);
+
+    assert(html.includes('Read'), 'should show tool name');
+    assert(html.includes('tool-use-details'), 'should have details section');
+});
+
+test('renderSession with only tool_result entries renders nothing', () => {
+    const session = makeSession({
+        entries: vec([
+            makeEntry({ content: vec([
+                makeBlock({ type: 'tool_result', text: 'output', toolUseId: 'toolu_999' })
+            ])})
+        ])
+    });
+
+    const html = renderSession(session);
+
+    assert(!html.includes('entry'), 'should not render any entries');
+});
+
 test('indexToolResults does not mark mixed content entry as result-only', () => {
     const session = makeSession({
         entries: vec([
