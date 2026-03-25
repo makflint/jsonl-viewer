@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <sstream>
 #include <vector>
 #include "../third_party/json.hpp"
 
@@ -61,4 +62,16 @@ inline std::vector<ContentBlock> extract_content(const json& entry) {
 inline SessionEntry parse_jsonl_line(const std::string& line) {
     auto parsed = json::parse(line);
     return SessionEntry{extract_entry_type(parsed), extract_content(parsed)};
+}
+
+inline std::vector<SessionEntry> parse_session(const std::string& jsonl) {
+    std::vector<SessionEntry> entries;
+    std::istringstream stream(jsonl);
+    std::string line;
+    while (std::getline(stream, line)) {
+        if (!line.empty()) {
+            entries.push_back(parse_jsonl_line(line));
+        }
+    }
+    return entries;
 }
