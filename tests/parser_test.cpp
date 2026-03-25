@@ -40,6 +40,7 @@ TEST_CASE("Parse tool_use block extracts name and input") {
     REQUIRE(entry.content[0].type == "tool_use");
     REQUIRE(entry.content[0].tool_name == "Bash");
     REQUIRE(entry.content[0].tool_input == "{\"command\":\"ls\",\"description\":\"list files\"}");
+    REQUIRE(entry.content[0].tool_use_id == "toolu_123");
 }
 
 TEST_CASE("Parse tool_result block extracts content and tool_use_id") {
