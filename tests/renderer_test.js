@@ -314,6 +314,16 @@ test('renderToolUseBlock highlights python heredoc', () => {
     assert(html.includes('import'), 'should contain python code');
 });
 
+test('renderToolUseBlock highlights python -c with escaped quotes in SSH command', () => {
+    const command = 'ssh user@host "python3 -c \\"\\nimport json\\nprint(json.dumps({}))\\n\\" && echo done"';
+    const block = makeBlock({ type: 'tool_use', toolName: 'Bash', toolInput: JSON.stringify({ command }), toolUseId: '' });
+
+    const html = renderContentBlock(block);
+
+    assert(html.includes('hljs-python'), 'should highlight python portion');
+    assert(html.includes('import json'), 'should contain python code');
+});
+
 test('renderToolUseBlock highlights regular command without python -c as bash', () => {
     const command = 'ls -la /tmp';
     const block = makeBlock({ type: 'tool_use', toolName: 'Bash', toolInput: JSON.stringify({ command }), toolUseId: '' });

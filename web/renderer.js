@@ -28,12 +28,12 @@ function highlightCode(code, language) {
 function highlightCommand(command) {
     if (typeof hljs === 'undefined') return escapeHtml(command);
 
-    var inlineMatch = command.match(/^(.*?python3?\s+-c\s+)(["'])([\s\S]*)\2([\s\S]*)$/);
+    var inlineMatch = command.match(/^(.*?python3?\s+-c\s+)(\\?["'])([\s\S]*)\2([\s\S]*)$/);
     if (inlineMatch) {
         return highlightCode(inlineMatch[1], 'bash')
-            + inlineMatch[2]
+            + escapeHtml(inlineMatch[2])
             + highlightCode(inlineMatch[3], 'python')
-            + inlineMatch[2]
+            + escapeHtml(inlineMatch[2])
             + highlightCode(inlineMatch[4], 'bash');
     }
 
