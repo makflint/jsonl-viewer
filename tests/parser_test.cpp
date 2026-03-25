@@ -145,3 +145,11 @@ TEST_CASE("Parse assistant message without top-level type falls back to message.
 
     REQUIRE(entry.type == "assistant");
 }
+
+TEST_CASE("Parse entry with string content does not throw") {
+    std::string line = R"({"type":"user","message":{"role":"user","content":"some plain text"}})";
+
+    auto entry = parse_jsonl_line(line);
+
+    REQUIRE(entry.content.empty());
+}

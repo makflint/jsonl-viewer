@@ -66,10 +66,11 @@ inline ContentBlock parse_content_block(const json& block) {
 
 inline std::vector<ContentBlock> extract_content(const json& entry) {
     std::vector<ContentBlock> blocks;
-    if (entry.contains("message") && entry["message"].contains("content")) {
-        for (const auto& block : entry["message"]["content"]) {
-            blocks.push_back(parse_content_block(block));
-        }
+    if (!entry.contains("message")) return blocks;
+    const auto& content = entry["message"]["content"];
+    if (!content.is_array()) return blocks;
+    for (const auto& block : content) {
+        blocks.push_back(parse_content_block(block));
     }
     return blocks;
 }
