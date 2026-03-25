@@ -6,13 +6,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(EMSCRIPTEN)
     add_executable(parser src/wasm_bindings.cpp)
-    target_compile_options(parser PRIVATE -O2)
+    target_compile_options(parser PRIVATE -O2 -fexceptions)
     target_link_options(parser PRIVATE
         --bind
         -sMODULARIZE=1
         -sEXPORT_NAME=ParserModule
         -sEXPORT_ES6=0
-        -sNO_DISABLE_EXCEPTION_CATCHING
+        -fexceptions
     )
     set_target_properties(parser PROPERTIES
         SUFFIX ".js"
