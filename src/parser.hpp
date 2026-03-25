@@ -86,7 +86,8 @@ inline Session parse_session(const std::string& jsonl) {
     std::string line;
     while (std::getline(stream, line)) {
         if (line.empty()) continue;
-        auto parsed = json::parse(line);
+        auto parsed = json::parse(line, nullptr, false);
+        if (parsed.is_discarded()) continue;
         std::string type = parsed.value("type", "");
         if (type == "ai-title") {
             session.title = parsed.value("aiTitle", "");
