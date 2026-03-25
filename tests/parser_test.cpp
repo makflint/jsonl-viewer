@@ -8,3 +8,11 @@ TEST_CASE("Parse single JSONL line extracts type") {
 
     REQUIRE(entry.type == "user");
 }
+
+TEST_CASE("Parse assistant message without top-level type falls back to message.role") {
+    std::string line = R"({"parentUuid":"abc","message":{"role":"assistant","content":[{"type":"text","text":"hi"}]}})";
+
+    auto entry = parse_jsonl_line(line);
+
+    REQUIRE(entry.type == "assistant");
+}
