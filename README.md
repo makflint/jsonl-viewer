@@ -2,10 +2,13 @@
 
 Browser-based pretty viewer for Claude Code JSONL session files.
 
+**Live demo:** https://makflint.github.io/jsonl-viewer/
+
 ## Tech Stack
 
 - **C++17** — core parser logic
 - **Emscripten** — compile to WebAssembly for browser
+- **marked.js** — Markdown rendering in assistant messages
 - **Catch2** — test framework (amalgamated, in `third_party/`)
 - **CMake** — build system (single `CMakeLists.txt` with two configurations: native for TDD, Emscripten for WASM)
 
@@ -29,7 +32,7 @@ mkdir -p build_wasm && cd build_wasm
 /opt/emsdk/upstream/emscripten/emcmake cmake ..
 /opt/emsdk/upstream/emscripten/emmake make
 # Output: web/parser.js + web/parser.wasm
-# Note: build uses -sNO_DISABLE_EXCEPTION_CATCHING (required for nlohmann/json)
+# Note: build uses -fexceptions (required for nlohmann/json)
 
 # Run the viewer locally
 cd web && python3 -m http.server 8080
@@ -40,9 +43,11 @@ cd web && python3 -m http.server 8080
 
 Parse and render Claude Code `.jsonl` session files in a browser with:
 - Message timeline (user, assistant, tool calls, tool results)
+- Markdown rendering in assistant messages
 - Collapsible thinking blocks
 - Collapsible tool call details with copyable commands
 - Tool results grouped under their tool call
 - Metadata entries hidden by default (toggle to show)
 - File upload / drag-and-drop of `.jsonl` files
 - Fully client-side (no server needed)
+- Deployed to GitHub Pages via Actions workflow
