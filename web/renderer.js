@@ -20,7 +20,7 @@ function entryClass(type) {
     return 'metadata';
 }
 
-function renderContentBlock(block) {
+function renderContentBlock(block, toolResults) {
     if (block.type === 'thinking') {
         return `<div class="content-block thinking">
                     <div class="thinking-label">Thinking</div>
@@ -30,10 +30,15 @@ function renderContentBlock(block) {
     if (block.type === 'tool_use') {
         let inputText = block.toolInput;
         try { inputText = JSON.stringify(JSON.parse(block.toolInput), null, 2); } catch(e) {}
-        return `<div class="content-block tool-use">
+        let html = `<div class="content-block tool-use">
                     <div class="tool-use-label">${escapeHtml(block.toolName)}</div>
                     <div class="tool-use-input">${escapeHtml(inputText)}</div>
                 </div>`;
+        const result = toolResults && toolResults[block.toolUseId];
+        if (result) {
+            html += renderContentBlock(result, null);
+        }
+        return html;
     }
     if (block.type === 'tool_result') {
         const label = block.isError ? 'Error' : 'Result';
@@ -47,7 +52,7 @@ function renderContentBlock(block) {
     return `<div class="content-block${blockClass}">${escapeHtml(block.text)}</div>`;
 }
 
-function renderEntry(entry) {
+function renderEntry(entry, toolResults) {
     const cls = entryClass(entry.type);
     const hidden = cls === 'metadata' ? ' hidden' : '';
     const timestamp = entry.timestamp
@@ -59,13 +64,35 @@ function renderEntry(entry) {
     if (entry.content.size() > 0) {
         html += '<div class="entry-body">';
         for (let i = 0; i < entry.content.size(); i++) {
-            html += renderContentBlock(entry.content.get(i));
+            html += renderContentBlock(entry.content.get(i), toolResults);
         }
         html += '</div>';
     }
 
     html += '</div>';
     return html;
+}
+
+function buildToolResultMap(entries) {
+    const map = {};
+    for (let i = 0; i < entries.size(); i++) {
+        const entry = entries.get(i);
+        for (let j = 0; j < entry.content.size(); j++) {
+            const block = entry.content.get(j);
+            if (block.type === 'tool_result' && block.toolUseId) {
+                map[block.toolUseId] = block;
+            }
+        }
+    }
+    return map;
+}
+
+function isToolResultOnly(entry) {
+    if (entry.content.size() === 0) return false;
+    for (let i = 0; i < entry.content.size(); i++) {
+        if (entry.content.get(i).type !== 'tool_result') return false;
+    }
+    return true;
 }
 
 function renderSession(session) {
@@ -85,10 +112,13 @@ function renderSession(session) {
         html += '</div>';
     }
 
+    const toolResults = buildToolResultMap(session.entries);
+
     for (let i = 0; i < session.entries.size(); i++) {
         const entry = session.entries.get(i);
         if (entry.type === 'ai-title') continue;
-        html += renderEntry(entry);
+        if (isToolResultOnly(entry)) continue;
+        html += renderEntry(entry, toolResults);
     }
 
     return html;
