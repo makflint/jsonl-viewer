@@ -1,9 +1,3 @@
-# Claude Code Session Pretty Print
-
-Browser-based pretty viewer for Claude Code JSONL session files.
-
----
-
 ## TDD Principles
 
 1. **Red-Green-Refactor cycle** — Write a failing test first, make it pass with the simplest code, then refactor. Never skip a step.
@@ -14,10 +8,13 @@ Browser-based pretty viewer for Claude Code JSONL session files.
 6. **Tests are first-class code** — Keep tests readable, maintainable, and free of duplication. Refactor tests too.
 7. **Fast feedback** — Tests must run in milliseconds. Slow tests break the cycle.
 8. **No production code without a failing test** — Every line of production code exists because a test required it.
+9. **Refactor is mandatory** — After every Green step, review *both* production and test code against the Clean Code Principles below. Apply at least one improvement or explicitly confirm nothing needs changing. Never skip the Refactor step.
 
 ---
 
 ## Clean Code Principles
+
+Use these as the checklist during every Refactor step:
 
 1. **Meaningful names** — Variables, functions, and classes reveal intent. No abbreviations, no mental mapping required.
 2. **Small functions** — Each function does one thing. If you can extract a block with a meaningful name, do it.
@@ -39,32 +36,3 @@ Browser-based pretty viewer for Claude Code JSONL session files.
 3. **Descriptive commit messages** — The message explains *why*, not just *what*. Prefix with the TDD phase: `red:`, `green:`, `refactor:`.
 4. **Never skip a commit** — Even "trivial" steps get recorded. The history should allow replaying the entire development process step by step.
 5. **No squashing** — Preserve the full granular history. Every decision point is visible.
-
----
-
-## Tech Stack
-
-- **C++17** — core parser logic
-- **Emscripten** — compile to WebAssembly for browser
-- **Catch2** — test framework (amalgamated, in `third_party/`)
-- **CMake** — build system
-
-## Build & Test Commands
-
-```bash
-# Native build (for TDD)
-mkdir -p build && cd build && cmake .. && make
-
-# Run tests
-./build/tests
-```
-
-## Project Goal
-
-Parse and render Claude Code `.jsonl` session files in a browser with:
-- Message timeline (user, assistant, tool calls, tool results)
-- Syntax-highlighted code blocks
-- Collapsible thinking blocks
-- Collapsible tool call details
-- File upload / drag-and-drop of `.jsonl` files
-- Fully client-side (no server needed)
