@@ -17,6 +17,12 @@ mkdir -p build && cd build && cmake .. && make
 
 # Run tests
 ./build/tests
+
+# WASM build (requires Emscripten + Python 3.10+)
+export EMSDK_PYTHON=/usr/bin/python3.10
+mkdir -p build_wasm && cd build_wasm
+emcmake cmake .. && emmake make
+# Output: web/parser.js + web/parser.wasm
 ```
 
 ## Project Goal
