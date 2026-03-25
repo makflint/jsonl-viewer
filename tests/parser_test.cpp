@@ -163,3 +163,55 @@ TEST_CASE("Parse entry without type or message.role returns unknown") {
 
     REQUIRE(entry.type == "unknown");
 }
+
+TEST_CASE("Parse entry with no message key has empty content") {
+    std::string line = R"({"type":"queue-operation","operation":"enqueue"})";
+
+    auto entry = parse_jsonl_line(line);
+
+    REQUIRE(entry.type == "queue-operation");
+    REQUIRE(entry.content.empty());
+}
+
+TEST_CASE("Parse tool_result with array content falls back to text field") {
+    std::string line = R"({"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","content":[{"type":"text","text":"nested"}]}]}})";
+
+    auto entry = parse_jsonl_line(line);
+
+    REQUIRE(entry.content.size() == 1);
+    REQUIRE(entry.content[0].type == "tool_result");
+    REQUIRE(entry.content[0].text.empty());
+}
+
+TEST_CASE("Parse entry with object content returns empty content") {
+    std::string line = R"({"type":"user","message":{"role":"user","content":{"key":"value"}}})";
+
+    auto entry = parse_jsonl_line(line);
+
+    REQUIRE(entry.content.empty());
+}
+
+TEST_CASE("Parse session handles entry with neither type nor message.role") {
+    std::string jsonl = R"({"foo":"bar"})";
+
+    auto session = parse_session(jsonl);
+
+    REQUIRE(session.size() == 1);
+    REQUIRE(session[0].type == "unknown");
+}
+
+TEST_CASE("Parse entry preserves unicode text") {
+    std::string line = R"({"type":"user","message":{"role":"user","content":[{"type":"text","text":"héllo 世界 🌍"}]}})";
+
+    auto entry = parse_jsonl_line(line);
+
+    REQUIRE(entry.content[0].text == "héllo 世界 🌍");
+}
+
+TEST_CASE("Parse session with empty input returns empty session") {
+    auto session = parse_session("");
+
+    REQUIRE(session.size() == 0);
+    REQUIRE(session.errors.empty());
+    REQUIRE(session.title.empty());
+}
