@@ -27,14 +27,14 @@ inline std::string extract_entry_type(const json& entry) {
 }
 
 inline std::string extract_block_text(const json& block) {
-    std::string text = block.value("text", "");
-    if (text.empty()) {
-        text = block.value("thinking", "");
+    std::string block_type = block.value("type", "");
+    if (block_type == "thinking") {
+        return block.value("thinking", "");
     }
-    if (text.empty() && block.contains("content") && block["content"].is_string()) {
-        text = block["content"].get<std::string>();
+    if (block_type == "tool_result" && block.contains("content") && block["content"].is_string()) {
+        return block["content"].get<std::string>();
     }
-    return text;
+    return block.value("text", "");
 }
 
 inline ContentBlock parse_content_block(const json& block) {
