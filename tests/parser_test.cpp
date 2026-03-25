@@ -54,6 +54,20 @@ TEST_CASE("Parse tool_result block extracts content and tool_use_id") {
     REQUIRE(entry.content[0].is_error == false);
 }
 
+TEST_CASE("Parse multiple JSONL lines into session entries") {
+    std::string jsonl =
+        R"({"type":"user","message":{"role":"user","content":[{"type":"text","text":"hello"}]}})" "\n"
+        R"({"message":{"role":"assistant","content":[{"type":"text","text":"hi there"}]}})";
+
+    auto entries = parse_session(jsonl);
+
+    REQUIRE(entries.size() == 2);
+    REQUIRE(entries[0].type == "user");
+    REQUIRE(entries[0].content[0].text == "hello");
+    REQUIRE(entries[1].type == "assistant");
+    REQUIRE(entries[1].content[0].text == "hi there");
+}
+
 TEST_CASE("Parse assistant message without top-level type falls back to message.role") {
     std::string line = R"({"parentUuid":"abc","message":{"role":"assistant","content":[{"type":"text","text":"hi"}]}})";
 
