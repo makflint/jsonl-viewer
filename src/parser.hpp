@@ -90,9 +90,8 @@ inline Session parse_session(const std::string& jsonl) {
         std::string type = parsed.value("type", "");
         if (type == "ai-title") {
             session.title = parsed.value("aiTitle", "");
-        } else if (parsed.contains("message")) {
-            session.entries.push_back(parse_entry(parsed));
         }
+        session.entries.push_back(parse_entry(parsed));
     }
     return session;
 }
