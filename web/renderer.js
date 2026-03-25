@@ -44,10 +44,7 @@ function renderToolUseBlock(block, toolResults) {
 function renderToolResultBlock(block) {
     const label = block.isError ? 'Error' : 'Result';
     const errorClass = block.isError ? ' error' : '';
-    return `<div class="content-block tool-result${errorClass}">
-                <div class="tool-result-label${errorClass}">${label}</div>
-                ${escapeHtml(block.text)}
-            </div>`;
+    return `<div class="content-block tool-result${errorClass}"><div class="tool-result-label${errorClass}">${label}</div><div class="tool-result-text">${escapeHtml(block.text)}</div></div>`;
 }
 
 function renderThinkingBlock(block) {
