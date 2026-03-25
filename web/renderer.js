@@ -47,17 +47,23 @@ function renderToolResultBlock(block) {
             </div>`;
 }
 
-function renderContentBlock(block, toolResults) {
-    if (block.type === 'thinking') {
-        return `<div class="content-block thinking">
-                    <div class="thinking-label">Thinking</div>
-                    <div class="thinking-content">${escapeHtml(block.text)}</div>
-                </div>`;
-    }
-    if (block.type === 'tool_use') return renderToolUseBlock(block, toolResults);
-    if (block.type === 'tool_result') return renderToolResultBlock(block);
+function renderThinkingBlock(block) {
+    return `<div class="content-block thinking">
+                <div class="thinking-label">Thinking</div>
+                <div class="thinking-content">${escapeHtml(block.text)}</div>
+            </div>`;
+}
+
+function renderTextBlock(block) {
     const blockClass = block.type === 'text' ? ' text-block' : '';
     return `<div class="content-block${blockClass}">${escapeHtml(block.text)}</div>`;
+}
+
+function renderContentBlock(block, toolResults) {
+    if (block.type === 'thinking') return renderThinkingBlock(block);
+    if (block.type === 'tool_use') return renderToolUseBlock(block, toolResults);
+    if (block.type === 'tool_result') return renderToolResultBlock(block);
+    return renderTextBlock(block);
 }
 
 function renderEntry(entry, toolResults) {
