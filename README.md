@@ -17,14 +17,21 @@ The same `CMakeLists.txt` serves both builds. When invoked via `emcmake`, it det
 # Native build (for TDD)
 mkdir -p build && cd build && cmake .. && make
 
-# Run tests
+# Run C++ tests
 ./build/tests
+
+# Run JS renderer tests
+node tests/renderer_test.js
 
 # WASM build (requires Emscripten + Python 3.10+)
 export EMSDK_PYTHON=/usr/bin/python3.10
 mkdir -p build_wasm && cd build_wasm
 emcmake cmake .. && emmake make
 # Output: web/parser.js + web/parser.wasm
+
+# Run the viewer locally
+cd web && python3 -m http.server 8080
+# Open http://localhost:8080
 ```
 
 ## Project Goal
