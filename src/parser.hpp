@@ -1,11 +1,18 @@
 #pragma once
 #include <string>
+#include <vector>
 #include "../third_party/json.hpp"
 
 using json = nlohmann::json;
 
+struct ContentBlock {
+    std::string type;
+    std::string text;
+};
+
 struct SessionEntry {
     std::string type;
+    std::vector<ContentBlock> content;
 };
 
 inline std::string extract_entry_type(const json& entry) {
@@ -15,7 +22,20 @@ inline std::string extract_entry_type(const json& entry) {
     return entry["message"]["role"].get<std::string>();
 }
 
+inline std::vector<ContentBlock> extract_content(const json& entry) {
+    std::vector<ContentBlock> blocks;
+    if (entry.contains("message") && entry["message"].contains("content")) {
+        for (const auto& block : entry["message"]["content"]) {
+            ContentBlock cb;
+            cb.type = block.value("type", "");
+            cb.text = block.value("text", "");
+            blocks.push_back(cb);
+        }
+    }
+    return blocks;
+}
+
 inline SessionEntry parse_jsonl_line(const std::string& line) {
     auto parsed = json::parse(line);
-    return SessionEntry{extract_entry_type(parsed)};
+    return SessionEntry{extract_entry_type(parsed), extract_content(parsed)};
 }
