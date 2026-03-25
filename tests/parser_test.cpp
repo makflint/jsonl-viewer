@@ -31,6 +31,17 @@ TEST_CASE("Parse assistant message with thinking block") {
     REQUIRE(entry.content[1].text == "here is my answer");
 }
 
+TEST_CASE("Parse tool_use block extracts name and input") {
+    std::string line = R"({"message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_123","name":"Bash","input":{"command":"ls","description":"list files"}}]}})";
+
+    auto entry = parse_jsonl_line(line);
+
+    REQUIRE(entry.content.size() == 1);
+    REQUIRE(entry.content[0].type == "tool_use");
+    REQUIRE(entry.content[0].tool_name == "Bash");
+    REQUIRE(entry.content[0].tool_input == "{\"command\":\"ls\",\"description\":\"list files\"}");
+}
+
 TEST_CASE("Parse assistant message without top-level type falls back to message.role") {
     std::string line = R"({"parentUuid":"abc","message":{"role":"assistant","content":[{"type":"text","text":"hi"}]}})";
 
