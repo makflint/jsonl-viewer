@@ -1,1 +1,4 @@
 build/
+build_wasm/
+web/parser.js
+web/parser.wasm
