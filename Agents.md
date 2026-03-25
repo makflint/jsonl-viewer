@@ -42,6 +42,23 @@ Browser-based pretty viewer for Claude Code JSONL session files.
 
 ---
 
+## Tech Stack
+
+- **C++17** — core parser logic
+- **Emscripten** — compile to WebAssembly for browser
+- **Catch2** — test framework (amalgamated, in `third_party/`)
+- **CMake** — build system
+
+## Build & Test Commands
+
+```bash
+# Native build (for TDD)
+mkdir -p build && cd build && cmake .. && make
+
+# Run tests
+./build/tests
+```
+
 ## Project Goal
 
 Parse and render Claude Code `.jsonl` session files in a browser with:
