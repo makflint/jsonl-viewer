@@ -1,5 +1,6 @@
 const assert = require('assert');
 global.marked = { parse: text => text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') };
+global.hljs = { highlight: (code, opts) => ({ value: `<span class="hljs-${opts.language}">${code}</span>` }) };
 const { renderEntry, renderContentBlock, renderSession, entryClass, escapeHtml } = require('../web/renderer.js');
 
 function vec(arr) {
@@ -291,4 +292,24 @@ test('indexToolResults does not mark mixed content entry as result-only', () => 
 
     assert(html.includes('class="entry user"'), 'should keep entry with mixed content');
     assert(html.includes('hello'), 'should show text content');
+});
+
+test('renderToolUseBlock highlights python -c inline code', () => {
+    const command = 'python3 -c "print(42)" | grep 42';
+    const block = makeBlock({ type: 'tool_use', toolName: 'Bash', toolInput: JSON.stringify({ command }), toolUseId: '' });
+
+    const html = renderContentBlock(block);
+
+    assert(html.includes('hljs-python'), 'should highlight python portion');
+    assert(html.includes('print(42)'), 'should contain python code');
+});
+
+test('renderToolUseBlock highlights regular command without python -c as bash', () => {
+    const command = 'ls -la /tmp';
+    const block = makeBlock({ type: 'tool_use', toolName: 'Bash', toolInput: JSON.stringify({ command }), toolUseId: '' });
+
+    const html = renderContentBlock(block);
+
+    assert(html.includes('hljs-bash'), 'should highlight as bash');
+    assert(html.includes('ls -la /tmp'), 'should contain command');
 });
