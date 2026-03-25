@@ -95,6 +95,21 @@ TEST_CASE("Parse session title from ai-title entry") {
     REQUIRE(session.title == "Create subdirectories");
 }
 
+TEST_CASE("Parse session skips non-message entries") {
+    std::string jsonl =
+        R"({"type":"queue-operation","operation":"enqueue","timestamp":"2026-03-25T06:20:14.840Z"})" "\n"
+        R"({"type":"user","timestamp":"2026-03-25T06:20:15.000Z","message":{"role":"user","content":[{"type":"text","text":"hello"}]}})" "\n"
+        R"({"type":"file-history-snapshot","messageId":"abc","snapshot":{}})" "\n"
+        R"({"type":"progress","data":{"type":"hook_progress"},"timestamp":"2026-03-25T06:20:20.000Z"})" "\n"
+        R"({"message":{"role":"assistant","content":[{"type":"text","text":"hi"}]}})";
+
+    auto session = parse_session(jsonl);
+
+    REQUIRE(session.size() == 2);
+    REQUIRE(session[0].type == "user");
+    REQUIRE(session[1].type == "assistant");
+}
+
 TEST_CASE("Parse assistant message without top-level type falls back to message.role") {
     std::string line = R"({"parentUuid":"abc","message":{"role":"assistant","content":[{"type":"text","text":"hi"}]}})";
 
