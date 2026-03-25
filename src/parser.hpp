@@ -10,5 +10,8 @@ struct SessionEntry {
 
 inline SessionEntry parse_jsonl_line(const std::string& line) {
     auto j = json::parse(line);
-    return SessionEntry{j.at("type").get<std::string>()};
+    if (j.contains("type")) {
+        return SessionEntry{j["type"].get<std::string>()};
+    }
+    return SessionEntry{j["message"]["role"].get<std::string>()};
 }
