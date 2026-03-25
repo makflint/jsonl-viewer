@@ -148,6 +148,15 @@ test('renderContentBlock shows tool description, hides input and result', () => 
     assert(html.includes('tool-use-details'), 'should have collapsible details wrapper');
 });
 
+test('renderContentBlock renders Bash command in a copyable code element', () => {
+    const block = { type: 'tool_use', text: '', toolName: 'Bash', toolInput: '{"command":"ls -la","description":"List files"}', toolUseId: '', isError: false };
+
+    const html = renderContentBlock(block, {});
+
+    assert(html.includes('<code'), 'should render command in a code element');
+    assert(html.includes('ls -la'), 'should contain the command');
+});
+
 test('renderSession groups tool_result under matching tool_use', () => {
     const session = {
         title: '',
