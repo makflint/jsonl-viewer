@@ -132,6 +132,9 @@ TEST_CASE("Parse session handles malformed line gracefully") {
     auto session = parse_session(jsonl);
 
     REQUIRE(session.size() == 2);
+    REQUIRE(session.errors.size() == 1);
+    REQUIRE(session.errors[0].line_number == 2);
+    REQUIRE(session.errors[0].raw_line == "not valid json");
 }
 
 TEST_CASE("Parse assistant message without top-level type falls back to message.role") {
