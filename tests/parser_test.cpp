@@ -68,6 +68,15 @@ TEST_CASE("Parse multiple JSONL lines into session entries") {
     REQUIRE(entries[1].content[0].text == "hi there");
 }
 
+TEST_CASE("Parse error tool_result has is_error true") {
+    std::string line = R"({"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_456","content":"command not found","is_error":true}]}})";
+
+    auto entry = parse_jsonl_line(line);
+
+    REQUIRE(entry.content[0].is_error == true);
+    REQUIRE(entry.content[0].text == "command not found");
+}
+
 TEST_CASE("Parse assistant message without top-level type falls back to message.role") {
     std::string line = R"({"parentUuid":"abc","message":{"role":"assistant","content":[{"type":"text","text":"hi"}]}})";
 
