@@ -46,7 +46,7 @@ struct Session {
 }
 
 [[nodiscard]] inline std::string extract_block_text(const json& block) {
-    std::string block_type = block.value("type", "");
+    auto block_type = block.value("type", std::string{});
     if (block_type == "thinking") {
         return block.value("thinking", "");
     }
@@ -103,7 +103,7 @@ struct Session {
             session.errors.push_back({line_number, line});
             continue;
         }
-        std::string type = parsed.value("type", "");
+        auto type = parsed.value("type", std::string{});
         if (type == "ai-title") {
             session.title = parsed.value("aiTitle", "");
             continue;
