@@ -208,6 +208,14 @@ TEST_CASE("Parse entry preserves unicode text") {
     REQUIRE(entry.content[0].text == "héllo 世界 🌍");
 }
 
+TEST_CASE("decode_line returns ParseError for malformed JSON") {
+    auto result = decode_line("not valid json", 3);
+
+    REQUIRE(!result.has_value());
+    REQUIRE(result.error().line_number == 3);
+    REQUIRE(result.error().raw_line == "not valid json");
+}
+
 TEST_CASE("Parse session with empty input returns empty session") {
     auto session = parse_session("");
 
