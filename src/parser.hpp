@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <string_view>
 #include <sstream>
 #include <vector>
 #include "../third_party/json.hpp"
@@ -86,7 +87,7 @@ struct Session {
     return entry;
 }
 
-[[nodiscard]] inline SessionEntry parse_jsonl_line(const std::string& line) {
+[[nodiscard]] inline SessionEntry parse_jsonl_line(std::string_view line) {
     return parse_entry(json::parse(line));
 }
 
