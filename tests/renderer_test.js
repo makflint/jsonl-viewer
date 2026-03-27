@@ -333,3 +333,29 @@ test('renderToolUseBlock highlights regular command without python -c as bash', 
     assert(html.includes('hljs-bash'), 'should highlight as bash');
     assert(html.includes('ls -la /tmp'), 'should contain command');
 });
+
+const { isJsonl } = require('../web/renderer.js');
+
+test('isJsonl returns true for valid JSONL content', () => {
+    assert.strictEqual(isJsonl('{"type":"user","message":{"role":"user"}}'), true);
+});
+
+test('isJsonl returns false for plain text', () => {
+    assert.strictEqual(isJsonl('hello world'), false);
+});
+
+test('isJsonl returns false for binary-like content', () => {
+    assert.strictEqual(isJsonl('\uFFFD\uFFFD\uFFFD'), false);
+});
+
+test('isJsonl returns false for XML', () => {
+    assert.strictEqual(isJsonl('<root><item>foo</item></root>'), false);
+});
+
+test('isJsonl returns false for empty string', () => {
+    assert.strictEqual(isJsonl(''), false);
+});
+
+test('isJsonl ignores leading empty lines', () => {
+    assert.strictEqual(isJsonl('\n\n{"type":"user"}'), true);
+});
