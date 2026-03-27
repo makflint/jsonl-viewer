@@ -181,6 +181,12 @@ function renderSession(session) {
     return html;
 }
 
+function isJsonl(text) {
+    const firstLine = text.split('\n').find(l => l.trim().length > 0);
+    if (!firstLine) return false;
+    try { JSON.parse(firstLine); return true; } catch(e) { return false; }
+}
+
 if (typeof module !== 'undefined') {
-    module.exports = { escapeHtml, formatTimestamp, entryClass, renderMarkdown, renderContentBlock, renderEntry, renderSession };
+    module.exports = { escapeHtml, formatTimestamp, entryClass, renderMarkdown, isJsonl, renderContentBlock, renderEntry, renderSession };
 }

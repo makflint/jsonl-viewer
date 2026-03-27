@@ -224,6 +224,10 @@
         }
 
         function displaySession(jsonl) {
+            if (!isJsonl(jsonl)) {
+                output.innerHTML = '<div class="errors">File does not appear to be JSONL — first line is not valid JSON.</div>';
+                return;
+            }
             const session = parserModule.parseSession(jsonl);
             output.innerHTML = renderSession(session);
             toggleBtn.style.display = '';
