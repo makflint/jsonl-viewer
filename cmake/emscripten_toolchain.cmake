@@ -9,17 +9,13 @@
 #
 # Requires the EMSDK environment variable to point to your emsdk root.
 
-find_program(EMSDK_PYTHON_EXECUTABLE
-    NAMES python3.10 python3.11 python3.12 python3.13
-    REQUIRED
-    DOC "Python 3.10+ required by Emscripten"
-)
-set(ENV{EMSDK_PYTHON} "${EMSDK_PYTHON_EXECUTABLE}")
+find_package(Python3 3.10 REQUIRED)
+set(ENV{EMSDK_PYTHON} "${Python3_EXECUTABLE}")
 
 # Inject EMSDK_PYTHON into every compiler invocation during the build phase.
 # cmake -E env sets environment variables for a single command, so make
 # picks it up even though it runs in a separate process from cmake.
-set(_emsdk_python_env "${CMAKE_COMMAND};-E;env;EMSDK_PYTHON=${EMSDK_PYTHON_EXECUTABLE}")
+set(_emsdk_python_env "${CMAKE_COMMAND};-E;env;EMSDK_PYTHON=${Python3_EXECUTABLE}")
 set(CMAKE_CXX_COMPILER_LAUNCHER  ${_emsdk_python_env})
 set(CMAKE_C_COMPILER_LAUNCHER    ${_emsdk_python_env})
 set(CMAKE_CXX_LINKER_LAUNCHER    ${_emsdk_python_env})
