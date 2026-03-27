@@ -70,14 +70,14 @@ struct Session {
 }
 
 [[nodiscard]] inline ContentBlock parse_content_block(const json& block) {
-    ContentBlock result;
-    result.type = block.value("type", "");
-    result.text = extract_block_text(block);
-    result.tool_name = block.value("name", "");
-    result.tool_input = block.contains("input") ? block["input"].dump() : "";
-    result.tool_use_id = extract_tool_use_id(block).value_or("");
-    result.is_error = block.value("is_error", false);
-    return result;
+    return ContentBlock{
+        .type      = block.value("type", ""),
+        .text      = extract_block_text(block),
+        .tool_name = block.value("name", ""),
+        .tool_input   = block.contains("input") ? block["input"].dump() : "",
+        .tool_use_id  = extract_tool_use_id(block).value_or(""),
+        .is_error     = block.value("is_error", false),
+    };
 }
 
 [[nodiscard]] inline std::vector<ContentBlock> extract_content(const json& entry) {
@@ -92,11 +92,11 @@ struct Session {
 }
 
 [[nodiscard]] inline SessionEntry parse_entry(const json& parsed) {
-    SessionEntry entry;
-    entry.type = extract_entry_type(parsed);
-    entry.timestamp = extract_timestamp(parsed).value_or("");
-    entry.content = extract_content(parsed);
-    return entry;
+    return SessionEntry{
+        .type      = extract_entry_type(parsed),
+        .timestamp = extract_timestamp(parsed).value_or(""),
+        .content   = extract_content(parsed),
+    };
 }
 
 [[nodiscard]] inline SessionEntry parse_jsonl_line(std::string_view line) {
@@ -113,7 +113,7 @@ struct Session {
         if (line.empty()) continue;
         auto parsed = json::parse(line, nullptr, false);
         if (parsed.is_discarded()) {
-            session.errors.push_back({line_number, line});
+            session.errors.push_back({.line_number = line_number, .raw_line = line});
             continue;
         }
         auto type = parsed.value("type", std::string{});
