@@ -120,17 +120,17 @@ struct Session {
     while (std::getline(stream, line)) {
         ++line_number;
         if (line.empty()) continue;
-        auto decoded = decode_line(line, line_number);
-        if (!decoded) {
-            session.errors.push_back(decoded.error());
+        auto parsed = decode_line(line, line_number);
+        if (!parsed) {
+            session.errors.push_back(parsed.error());
             continue;
         }
-        auto type = decoded->value("type", std::string{});
+        auto type = parsed->value("type", std::string{});
         if (type == "ai-title") {
-            session.title = decoded->value("aiTitle", "");
+            session.title = parsed->value("aiTitle", "");
             continue;
         }
-        session.entries.push_back(parse_entry(*decoded));
+        session.entries.push_back(parse_entry(*parsed));
     }
     return session;
 }
