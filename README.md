@@ -27,9 +27,9 @@ mkdir -p build && cd build && cmake .. && make
 node tests/renderer_test.js
 
 # WASM build (requires Emscripten + Python 3.10+)
+# Set EMSDK to your emsdk root, e.g.: export EMSDK=/opt/emsdk
 # First time only — cmake/emscripten_toolchain.cmake auto-locates Python 3.10+
-EMSDK=/path/to/emsdk cmake -B build_wasm \
-  -DCMAKE_TOOLCHAIN_FILE=cmake/emscripten_toolchain.cmake .
+cmake -B build_wasm -DCMAKE_TOOLCHAIN_FILE=cmake/emscripten_toolchain.cmake .
 # Subsequent builds
 make -C build_wasm
 # Output: web/parser.js + web/parser.wasm
