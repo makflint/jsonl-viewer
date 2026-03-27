@@ -1,4 +1,5 @@
 #pragma once
+#include <expected>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -36,6 +37,14 @@ struct Session {
     const SessionEntry& operator[](size_t i) const { return entries[i]; }
     size_t size() const { return entries.size(); }
 };
+
+[[nodiscard]] inline std::expected<json, ParseError> decode_line(std::string_view line, int line_number) {
+    auto parsed = json::parse(line, nullptr, false);
+    if (parsed.is_discarded()) {
+        return std::unexpected(ParseError{.line_number = line_number, .raw_line = std::string{line}});
+    }
+    return parsed;
+}
 
 [[nodiscard]] inline std::optional<std::string> extract_timestamp(const json& entry) {
     if (!entry.contains("timestamp")) return std::nullopt;
