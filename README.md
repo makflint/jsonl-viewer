@@ -6,7 +6,7 @@ Browser-based pretty viewer for Claude Code JSONL session files.
 
 ## Tech Stack
 
-- **C++17** — core parser logic
+- **C++23** — core parser logic
 - **Emscripten** — compile to WebAssembly for browser
 - **marked.js** — Markdown rendering in assistant messages
 - **Catch2** — test framework (amalgamated, in `third_party/`)
@@ -27,12 +27,12 @@ mkdir -p build && cd build && cmake .. && make
 node tests/renderer_test.js
 
 # WASM build (requires Emscripten + Python 3.10+)
-export EMSDK_PYTHON=/usr/bin/python3.10
-mkdir -p build_wasm && cd build_wasm
-/opt/emsdk/upstream/emscripten/emcmake cmake ..
-/opt/emsdk/upstream/emscripten/emmake make
+# First time only — cmake/emscripten_toolchain.cmake auto-locates Python 3.10+
+EMSDK=/path/to/emsdk cmake -B build_wasm \
+  -DCMAKE_TOOLCHAIN_FILE=cmake/emscripten_toolchain.cmake .
+# Subsequent builds
+make -C build_wasm
 # Output: web/parser.js + web/parser.wasm
-# Note: build uses -fexceptions (required for nlohmann/json)
 
 # Run the viewer locally
 cd web && python3 -m http.server 8080
