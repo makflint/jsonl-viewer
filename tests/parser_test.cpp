@@ -208,16 +208,16 @@ TEST_CASE("Parse entry preserves unicode text") {
     REQUIRE(entry.content[0].text == "héllo 世界 🌍");
 }
 
-TEST_CASE("decode_line returns ParseError for malformed JSON") {
-    auto result = decode_line("not valid json", 3);
+TEST_CASE("line_to_json returns ParseError for malformed JSON") {
+    auto result = line_to_json("not valid json", 3);
 
     REQUIRE(!result.has_value());
     REQUIRE(result.error().line_number == 3);
     REQUIRE(result.error().raw_line == "not valid json");
 }
 
-TEST_CASE("decode_line returns parsed JSON for valid input") {
-    auto result = decode_line(R"({"type":"user"})", 1);
+TEST_CASE("line_to_json returns parsed JSON for valid input") {
+    auto result = line_to_json(R"({"type":"user"})", 1);
 
     REQUIRE(result.has_value());
     REQUIRE((*result)["type"] == "user");

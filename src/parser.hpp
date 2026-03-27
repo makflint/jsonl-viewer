@@ -38,7 +38,7 @@ struct Session {
     size_t size() const { return entries.size(); }
 };
 
-[[nodiscard]] inline std::expected<json, ParseError> decode_line(std::string_view line, int line_number) {
+[[nodiscard]] inline std::expected<json, ParseError> line_to_json(std::string_view line, int line_number) {
     auto parsed = json::parse(line, nullptr, false);
     if (parsed.is_discarded()) {
         return std::unexpected(ParseError{.line_number = line_number, .raw_line = std::string{line}});
@@ -120,7 +120,7 @@ struct Session {
     while (std::getline(stream, line)) {
         ++line_number;
         if (line.empty()) continue;
-        auto parsed = decode_line(line, line_number);
+        auto parsed = line_to_json(line, line_number);
         if (!parsed) {
             session.errors.push_back(parsed.error());
             continue;
