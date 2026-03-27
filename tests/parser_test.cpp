@@ -216,6 +216,13 @@ TEST_CASE("decode_line returns ParseError for malformed JSON") {
     REQUIRE(result.error().raw_line == "not valid json");
 }
 
+TEST_CASE("decode_line returns parsed JSON for valid input") {
+    auto result = decode_line(R"({"type":"user"})", 1);
+
+    REQUIRE(result.has_value());
+    REQUIRE((*result)["type"] == "user");
+}
+
 TEST_CASE("Parse session with empty input returns empty session") {
     auto session = parse_session("");
 
