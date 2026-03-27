@@ -35,7 +35,7 @@ struct Session {
     size_t size() const { return entries.size(); }
 };
 
-inline std::string extract_entry_type(const json& entry) {
+[[nodiscard]] inline std::string extract_entry_type(const json& entry) {
     if (entry.contains("type")) {
         return entry["type"].get<std::string>();
     }
@@ -45,7 +45,7 @@ inline std::string extract_entry_type(const json& entry) {
     return "unknown";
 }
 
-inline std::string extract_block_text(const json& block) {
+[[nodiscard]] inline std::string extract_block_text(const json& block) {
     std::string block_type = block.value("type", "");
     if (block_type == "thinking") {
         return block.value("thinking", "");
@@ -56,7 +56,7 @@ inline std::string extract_block_text(const json& block) {
     return block.value("text", "");
 }
 
-inline ContentBlock parse_content_block(const json& block) {
+[[nodiscard]] inline ContentBlock parse_content_block(const json& block) {
     ContentBlock result;
     result.type = block.value("type", "");
     result.text = extract_block_text(block);
@@ -67,7 +67,7 @@ inline ContentBlock parse_content_block(const json& block) {
     return result;
 }
 
-inline std::vector<ContentBlock> extract_content(const json& entry) {
+[[nodiscard]] inline std::vector<ContentBlock> extract_content(const json& entry) {
     std::vector<ContentBlock> blocks;
     if (!entry.contains("message")) return blocks;
     const auto& content = entry["message"]["content"];
@@ -78,7 +78,7 @@ inline std::vector<ContentBlock> extract_content(const json& entry) {
     return blocks;
 }
 
-inline SessionEntry parse_entry(const json& parsed) {
+[[nodiscard]] inline SessionEntry parse_entry(const json& parsed) {
     SessionEntry entry;
     entry.type = extract_entry_type(parsed);
     entry.timestamp = parsed.value("timestamp", "");
@@ -86,11 +86,11 @@ inline SessionEntry parse_entry(const json& parsed) {
     return entry;
 }
 
-inline SessionEntry parse_jsonl_line(const std::string& line) {
+[[nodiscard]] inline SessionEntry parse_jsonl_line(const std::string& line) {
     return parse_entry(json::parse(line));
 }
 
-inline Session parse_session(const std::string& jsonl) {
+[[nodiscard]] inline Session parse_session(const std::string& jsonl) {
     Session session;
     std::istringstream stream(jsonl);
     std::string line;
