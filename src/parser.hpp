@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include <string>
 #include <string_view>
 #include <sstream>
@@ -36,6 +37,17 @@ struct Session {
     size_t size() const { return entries.size(); }
 };
 
+[[nodiscard]] inline std::optional<std::string> extract_timestamp(const json& entry) {
+    if (!entry.contains("timestamp")) return std::nullopt;
+    return entry["timestamp"].get<std::string>();
+}
+
+[[nodiscard]] inline std::optional<std::string> extract_tool_use_id(const json& block) {
+    if (block.contains("tool_use_id")) return block["tool_use_id"].get<std::string>();
+    if (block.contains("id")) return block["id"].get<std::string>();
+    return std::nullopt;
+}
+
 [[nodiscard]] inline std::string extract_entry_type(const json& entry) {
     if (entry.contains("type")) {
         return entry["type"].get<std::string>();
@@ -63,7 +75,7 @@ struct Session {
     result.text = extract_block_text(block);
     result.tool_name = block.value("name", "");
     result.tool_input = block.contains("input") ? block["input"].dump() : "";
-    result.tool_use_id = block.value("tool_use_id", block.value("id", ""));
+    result.tool_use_id = extract_tool_use_id(block).value_or("");
     result.is_error = block.value("is_error", false);
     return result;
 }
@@ -82,7 +94,7 @@ struct Session {
 [[nodiscard]] inline SessionEntry parse_entry(const json& parsed) {
     SessionEntry entry;
     entry.type = extract_entry_type(parsed);
-    entry.timestamp = parsed.value("timestamp", "");
+    entry.timestamp = extract_timestamp(parsed).value_or("");
     entry.content = extract_content(parsed);
     return entry;
 }
