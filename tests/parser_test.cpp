@@ -249,6 +249,33 @@ TEST_CASE("line_to_json returns parsed JSON for valid input") {
     REQUIRE((*result)["type"] == "user");
 }
 
+TEST_CASE("Parse session assigns 1-based line_number to each entry") {
+    std::string jsonl =
+        R"({"type":"user","message":{"role":"user","content":[{"type":"text","text":"hi"}]}})" "\n"
+        R"({"foo":"bar"})" "\n"
+        R"({"baz":"qux"})";
+
+    auto session = parse_session(jsonl);
+
+    REQUIRE(session.size() == 3);
+    REQUIRE(session[0].line_number == 1);
+    REQUIRE(session[1].line_number == 2);
+    REQUIRE(session[2].line_number == 3);
+}
+
+TEST_CASE("Parse session preserves source line numbers across blank lines") {
+    std::string jsonl =
+        R"({"foo":"bar"})" "\n"
+        "\n"
+        R"({"baz":"qux"})";
+
+    auto session = parse_session(jsonl);
+
+    REQUIRE(session.size() == 2);
+    REQUIRE(session[0].line_number == 1);
+    REQUIRE(session[1].line_number == 3);
+}
+
 TEST_CASE("Parse session with empty input returns empty session") {
     auto session = parse_session("");
 
