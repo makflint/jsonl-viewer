@@ -86,3 +86,23 @@ TEST_CASE("analyze_raw_schema captures array length stats and kind") {
     REQUIRE(*schema.columns[0].stats.array_max_length == 5.0);
     REQUIRE(*schema.columns[0].stats.array_avg_length == Catch::Approx(8.0 / 3.0));
 }
+
+TEST_CASE("analyze_raw_schema recurses into nested objects") {
+    std::vector<nlohmann::json> entries = {
+        nlohmann::json::parse(R"({"dzial_1o":{"powierzchnia_m2":634.0,"typ_nieruchomosci":"gruntowa"}})"),
+        nlohmann::json::parse(R"({"dzial_1o":{"powierzchnia_m2":383.0,"typ_nieruchomosci":"gruntowa"}})")
+    };
+
+    auto schema = analyze_raw_schema(entries);
+
+    REQUIRE(schema.columns.size() == 1);
+    REQUIRE(schema.columns[0].name == "dzial_1o");
+    REQUIRE(schema.columns[0].kind == "object");
+    REQUIRE(schema.columns[0].children.size() == 2);
+    REQUIRE(schema.columns[0].children[0].name == "powierzchnia_m2");
+    REQUIRE(schema.columns[0].children[0].path == "dzial_1o.powierzchnia_m2");
+    REQUIRE(schema.columns[0].children[0].kind == "leaf");
+    REQUIRE(schema.columns[0].children[0].stats.present_count == 2);
+    REQUIRE(schema.columns[0].children[1].name == "typ_nieruchomosci");
+    REQUIRE(schema.columns[0].children[1].path == "dzial_1o.typ_nieruchomosci");
+}
