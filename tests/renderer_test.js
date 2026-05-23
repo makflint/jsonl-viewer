@@ -406,3 +406,24 @@ test('isJsonl returns false for empty string', () => {
 test('isJsonl ignores leading empty lines', () => {
     assert.strictEqual(isJsonl('\n\n{"type":"user"}'), true);
 });
+
+test('extractCellValue returns top-level field', () => {
+    const { extractCellValue } = require('../web/renderer.js');
+    assert.strictEqual(extractCellValue({nr_kw: "ABC"}, "nr_kw"), "ABC");
+});
+
+test('extractCellValue traverses dotted path', () => {
+    const { extractCellValue } = require('../web/renderer.js');
+    assert.strictEqual(extractCellValue({dzial_1o: {powierzchnia_m2: 634}}, "dzial_1o.powierzchnia_m2"), 634);
+});
+
+test('extractCellValue returns undefined for missing path', () => {
+    const { extractCellValue } = require('../web/renderer.js');
+    assert.strictEqual(extractCellValue({}, "nr_kw"), undefined);
+    assert.strictEqual(extractCellValue({a:{}}, "a.b.c"), undefined);
+});
+
+test('extractCellValue returns null when value is null', () => {
+    const { extractCellValue } = require('../web/renderer.js');
+    assert.strictEqual(extractCellValue({typ: null}, "typ"), null);
+});
