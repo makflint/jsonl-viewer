@@ -119,3 +119,17 @@ TEST_CASE("analyze_raw_schema records all types for heterogeneous field") {
     REQUIRE(schema.columns[0].stats.type_counts["string"] == 1);
     REQUIRE(schema.columns[0].stats.type_counts["number"] == 2);
 }
+
+TEST_CASE("analyze_raw_schema preserves first-seen column order") {
+    std::vector<nlohmann::json> entries = {
+        nlohmann::json::parse(R"({"nr_kw":"A","typ":"gruntowa"})"),
+        nlohmann::json::parse(R"({"typ":"lokalowa","status":"OK"})")  // status is new
+    };
+
+    auto schema = analyze_raw_schema(entries);
+
+    REQUIRE(schema.columns.size() == 3);
+    REQUIRE(schema.columns[0].name == "nr_kw");
+    REQUIRE(schema.columns[1].name == "typ");
+    REQUIRE(schema.columns[2].name == "status");
+}
