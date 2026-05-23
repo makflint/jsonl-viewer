@@ -57,6 +57,11 @@ struct RawSchema {
             col.stats.present_count++;
             if (value.is_null()) col.stats.null_count++;
             col.stats.type_counts[json_type_name(value)]++;
+            if (value.is_number()) {
+                double n = value.get<double>();
+                if (!col.stats.numeric_min || n < *col.stats.numeric_min) col.stats.numeric_min = n;
+                if (!col.stats.numeric_max || n > *col.stats.numeric_max) col.stats.numeric_max = n;
+            }
         }
     }
 
