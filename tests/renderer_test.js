@@ -594,9 +594,10 @@ test('renderSchemaStats shows top values for string field', () => {
     assert(html.includes('5'), 'should show top count');
 });
 
-test('renderSchemaStats includes jump-to-table link', () => {
+test('renderSchemaStats renders column headers', () => {
     const { renderSchemaStats } = require('../web/renderer.js');
     const schema = {recordCount: 0, columns: vec([])};
     const html = renderSchemaStats(schema);
-    assert(html.includes('jump to table') || html.includes('Jump to table'), 'should have jump link');
+    assert(html.includes('<th'), 'should have th tags');
+    assert(html.includes('Field'), 'should have Field header');
 });

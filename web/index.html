@@ -382,10 +382,9 @@
             const session = parserModule.parseSession(jsonl);
             currentSession = session;
             document.getElementById('outputJson').innerHTML = renderSession(session);
-            toggleBtn.style.display = '';
-
             // Show tabs and render table only when raw schema is present
             const hasSchema = parserModule.hasRawSchema(session);
+            toggleBtn.style.display = hasSchema ? 'none' : '';
             const tabs = document.getElementById('viewTabs');
             tabs.style.display = hasSchema ? '' : 'none';
             if (hasSchema) {

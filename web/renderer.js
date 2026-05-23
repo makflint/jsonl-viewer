@@ -417,7 +417,6 @@ function renderSchemaStats(schema) {
     let html = `<div class="schema-stats">
         <div class="schema-stats-header">
             <h3>Schema statistics (${schema.recordCount} records)</h3>
-            <a href="#" class="jump-link" onclick="document.getElementById('tabTable').click(); return false;">→ jump to table</a>
         </div>
         <table class="stats-table"><thead><tr>
             <th>Field</th><th>Kind</th><th>Presence</th><th>Details</th>
