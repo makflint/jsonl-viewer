@@ -21,6 +21,11 @@ struct ColumnNode {
     std::string kind;
     std::vector<ColumnNode> children;
     FieldStats stats;
+    // Transient accumulators used during analysis; finalize_schema clears these.
+    std::map<std::string, int> _string_counts;
+    double _array_length_sum = 0.0;
+    int _array_length_count = 0;
+    std::map<std::string, size_t> _child_index;  // name -> index in children
 };
 
 struct RawSchema {
@@ -50,59 +55,70 @@ struct RawSchema {
     return sorted;
 }
 
+inline void merge_value(ColumnNode& col, const nlohmann::json& value);
+
+inline void merge_object(std::vector<ColumnNode>& columns,
+                          std::map<std::string, size_t>& index,
+                          const std::string& path_prefix,
+                          const nlohmann::json& obj) {
+    for (auto it = obj.begin(); it != obj.end(); ++it) {
+        const auto& key = it.key();
+        const auto& value = it.value();
+        if (index.find(key) == index.end()) {
+            index[key] = columns.size();
+            std::string path = path_prefix.empty() ? key : path_prefix + "." + key;
+            std::string kind = value.is_array() ? "array_summary"
+                              : value.is_object() ? "object"
+                              : "leaf";
+            columns.push_back(ColumnNode{.name = key, .path = path, .kind = kind});
+        }
+        merge_value(columns[index[key]], value);
+    }
+}
+
+inline void merge_value(ColumnNode& col, const nlohmann::json& value) {
+    col.stats.present_count++;
+    if (value.is_null()) col.stats.null_count++;
+    col.stats.type_counts[json_type_name(value)]++;
+    if (value.is_number()) {
+        double n = value.get<double>();
+        if (!col.stats.numeric_min || n < *col.stats.numeric_min) col.stats.numeric_min = n;
+        if (!col.stats.numeric_max || n > *col.stats.numeric_max) col.stats.numeric_max = n;
+    }
+    if (value.is_string()) {
+        col._string_counts[value.get<std::string>()]++;
+    }
+    if (value.is_array()) {
+        double len = static_cast<double>(value.size());
+        if (!col.stats.array_max_length || len > *col.stats.array_max_length) col.stats.array_max_length = len;
+        col._array_length_sum += len;
+        col._array_length_count++;
+    }
+    if (value.is_object()) {
+        merge_object(col.children, col._child_index, col.path, value);
+    }
+}
+
+inline void finalize_column(ColumnNode& col) {
+    col.stats.top_values = top_n_by_frequency(col._string_counts, 5);
+    if (col._array_length_count > 0) {
+        col.stats.array_avg_length = col._array_length_sum / col._array_length_count;
+    }
+    col._string_counts.clear();
+    col._child_index.clear();
+    for (auto& child : col.children) finalize_column(child);
+}
+
 [[nodiscard]] inline RawSchema analyze_raw_schema(const std::vector<nlohmann::json>& entries) {
     RawSchema schema;
     schema.record_count = static_cast<int>(entries.size());
-
-    std::map<std::string, size_t> column_index;
-    std::vector<std::map<std::string, int>> string_counts;  // parallel to schema.columns
-    std::vector<double> array_length_sum;
-    std::vector<int> array_length_count;
+    std::map<std::string, size_t> top_index;
 
     for (const auto& entry : entries) {
         if (!entry.is_object()) continue;
-        for (auto it = entry.begin(); it != entry.end(); ++it) {
-            const auto& key = it.key();
-            const auto& value = it.value();
-            if (column_index.find(key) == column_index.end()) {
-                column_index[key] = schema.columns.size();
-                std::string kind = value.is_array() ? "array_summary"
-                                  : value.is_object() ? "object"
-                                  : "leaf";
-                schema.columns.push_back(ColumnNode{.name = key, .path = key, .kind = kind});
-                string_counts.emplace_back();
-                array_length_sum.push_back(0.0);
-                array_length_count.push_back(0);
-            }
-            auto idx = column_index[key];
-            auto& col = schema.columns[idx];
-            col.stats.present_count++;
-            if (value.is_null()) col.stats.null_count++;
-            col.stats.type_counts[json_type_name(value)]++;
-            if (value.is_number()) {
-                double n = value.get<double>();
-                if (!col.stats.numeric_min || n < *col.stats.numeric_min) col.stats.numeric_min = n;
-                if (!col.stats.numeric_max || n > *col.stats.numeric_max) col.stats.numeric_max = n;
-            }
-            if (value.is_string()) {
-                string_counts[idx][value.get<std::string>()]++;
-            }
-            if (value.is_array()) {
-                double len = static_cast<double>(value.size());
-                if (!col.stats.array_max_length || len > *col.stats.array_max_length) col.stats.array_max_length = len;
-                array_length_sum[idx] += len;
-                array_length_count[idx]++;
-            }
-        }
+        merge_object(schema.columns, top_index, "", entry);
     }
 
-    // Materialize top-5 per column
-    for (size_t i = 0; i < schema.columns.size(); ++i) {
-        schema.columns[i].stats.top_values = top_n_by_frequency(string_counts[i], 5);
-        if (array_length_count[i] > 0) {
-            schema.columns[i].stats.array_avg_length = array_length_sum[i] / array_length_count[i];
-        }
-    }
-
+    for (auto& col : schema.columns) finalize_column(col);
     return schema;
 }
