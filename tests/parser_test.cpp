@@ -283,3 +283,25 @@ TEST_CASE("Parse session with empty input returns empty session") {
     REQUIRE(session.errors.empty());
     REQUIRE(session.title.empty());
 }
+
+TEST_CASE("parse_session populates raw_schema when raw entries exist") {
+    std::string jsonl =
+        R"({"nr_kw":"KA1K/00000001/9","typ":"gruntowa"})" "\n"
+        R"({"nr_kw":"KA1K/00000002/6","typ":"lokalowa"})";
+
+    auto session = parse_session(jsonl);
+
+    REQUIRE(session.raw_schema.has_value());
+    REQUIRE(session.raw_schema->record_count == 2);
+    REQUIRE(session.raw_schema->columns.size() == 2);
+    REQUIRE(session.raw_schema->columns[0].name == "nr_kw");
+}
+
+TEST_CASE("parse_session leaves raw_schema empty when no raw entries") {
+    std::string jsonl =
+        R"({"type":"user","message":{"role":"user","content":[{"type":"text","text":"hi"}]}})";
+
+    auto session = parse_session(jsonl);
+
+    REQUIRE_FALSE(session.raw_schema.has_value());
+}
