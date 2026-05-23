@@ -337,6 +337,70 @@ function renderRawTable(rawEntries, schema) {
     return html;
 }
 
+function statsForLeaf(stats) {
+    const parts = [];
+    // Type breakdown
+    const typeStrs = [];
+    if (stats.typeCounts) {
+        for (const k in stats.typeCounts) typeStrs.push(`${k}: ${stats.typeCounts[k]}`);
+    }
+    if (typeStrs.length) parts.push(typeStrs.join(', '));
+    // Numeric range
+    const hasMin = stats.hasNumericMin !== undefined ? stats.hasNumericMin : stats.numericMin !== undefined;
+    if (hasMin) parts.push(`range: ${stats.numericMin} .. ${stats.numericMax}`);
+    // Top values
+    if (stats.topValues) {
+        const len = vecLen(stats.topValues);
+        if (len > 0) {
+            const top = [];
+            for (let i = 0; i < len; i++) {
+                const tv = vecGet(stats.topValues, i);
+                top.push(`${tv.value} (${tv.count})`);
+            }
+            parts.push(`top: ${top.join(', ')}`);
+        }
+    }
+    // Array stats
+    const hasArrAvg = stats.hasArrayAvgLength !== undefined ? stats.hasArrayAvgLength : stats.arrayAvgLength !== undefined;
+    if (hasArrAvg) parts.push(`avg length: ${stats.arrayAvgLength.toFixed(1)}, max: ${stats.arrayMaxLength}`);
+    return parts.join('<br>');
+}
+
+function renderStatsRow(col, recordCount, depth) {
+    const indent = '&nbsp;'.repeat(depth * 2);
+    const presence = `${col.stats.presentCount || 0}/${recordCount}`;
+    const pct = recordCount > 0 ? Math.round(100 * (col.stats.presentCount || 0) / recordCount) : 0;
+    const nullPart = col.stats.nullCount ? ` &nbsp; null: ${col.stats.nullCount}` : '';
+    let html = `<tr>
+        <td class="stats-name">${indent}${escapeHtml(col.path)}</td>
+        <td class="stats-kind">${escapeHtml(col.kind)}</td>
+        <td class="stats-presence">${presence} (${pct}%)${nullPart}</td>
+        <td class="stats-detail">${statsForLeaf(col.stats)}</td>
+    </tr>`;
+    if (col.kind === 'object') {
+        const len = vecLen(col.children);
+        for (let i = 0; i < len; i++) {
+            html += renderStatsRow(vecGet(col.children, i), recordCount, depth + 1);
+        }
+    }
+    return html;
+}
+
+function renderSchemaStats(schema) {
+    let html = `<div class="schema-stats">
+        <div class="schema-stats-header">
+            <h3>Schema statistics (${schema.recordCount} records)</h3>
+            <a href="#raw-table" class="jump-link">↑ jump to table</a>
+        </div>
+        <table class="stats-table"><tbody>`;
+    const len = vecLen(schema.columns);
+    for (let i = 0; i < len; i++) {
+        html += renderStatsRow(vecGet(schema.columns, i), schema.recordCount, 0);
+    }
+    html += '</tbody></table></div>';
+    return html;
+}
+
 if (typeof module !== 'undefined') {
-    module.exports = { escapeHtml, formatTimestamp, entryClass, renderMarkdown, isJsonl, renderContentBlock, renderEntry, renderSession, extractCellValue, summarizeArrayCell, buildHeaderRows, renderRawTable };
+    module.exports = { escapeHtml, formatTimestamp, entryClass, renderMarkdown, isJsonl, renderContentBlock, renderEntry, renderSession, extractCellValue, summarizeArrayCell, buildHeaderRows, renderRawTable, renderSchemaStats };
 }
