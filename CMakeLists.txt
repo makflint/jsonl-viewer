@@ -23,7 +23,7 @@ else()
     add_library(catch2 third_party/catch_amalgamated.cpp)
     target_include_directories(catch2 PUBLIC third_party)
 
-    add_executable(tests tests/parser_test.cpp)
+    add_executable(tests tests/parser_test.cpp tests/schema_test.cpp)
     target_link_libraries(tests catch2)
     target_include_directories(tests PRIVATE src)
 endif()
