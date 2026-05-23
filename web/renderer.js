@@ -115,11 +115,13 @@ function renderContentBlock(block, toolIndex) {
 function renderEntry(entry, toolIndex) {
     const cls = entryClass(entry.type);
     const hidden = cls === 'metadata' ? ' hidden' : '';
-    const timestamp = entry.timestamp
+    const meta = entry.timestamp
         ? `<span class="timestamp">${formatTimestamp(entry.timestamp)}</span>`
-        : '';
+        : entry.lineNumber > 0
+            ? `<span class="timestamp">line ${entry.lineNumber}</span>`
+            : '';
     let html = `<div class="entry ${cls}${hidden}">`;
-    html += `<div class="entry-header"><span>${escapeHtml(entry.type)}</span>${timestamp}</div>`;
+    html += `<div class="entry-header"><span>${escapeHtml(entry.type)}</span>${meta}</div>`;
 
     if (entry.content.size() > 0) {
         html += '<div class="entry-body">';
