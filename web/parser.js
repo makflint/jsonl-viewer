@@ -2402,6 +2402,92 @@ async function createWasm() {
     };
 
   
+  
+  
+  
+  
+  
+  
+  var validateThis = (this_, classType, humanName) => {
+      if (!(this_ instanceof Object)) {
+        throwBindingError(`${humanName} with invalid "this": ${this_}`);
+      }
+      if (!(this_ instanceof classType.registeredClass.constructor)) {
+        throwBindingError(`${humanName} incompatible with "this" of type ${this_.constructor.name}`);
+      }
+      if (!this_.$$.ptr) {
+        throwBindingError(`cannot call emscripten binding method ${humanName} on deleted object`);
+      }
+  
+      // todo: kill this
+      return upcastPointer(this_.$$.ptr,
+                           this_.$$.ptrType.registeredClass,
+                           classType.registeredClass);
+    };
+  var __embind_register_class_property = (classType,
+                                      fieldName,
+                                      getterReturnType,
+                                      getterSignature,
+                                      getter,
+                                      getterContext,
+                                      setterArgumentType,
+                                      setterSignature,
+                                      setter,
+                                      setterContext) => {
+      fieldName = AsciiToString(fieldName);
+      getter = embind__requireFunction(getterSignature, getter);
+  
+      whenDependentTypesAreResolved([], [classType], (classType) => {
+        classType = classType[0];
+        var humanName = `${classType.name}.${fieldName}`;
+        var desc = {
+          get() {
+            throwUnboundTypeError(`Cannot access ${humanName} due to unbound types`, [getterReturnType, setterArgumentType]);
+          },
+          enumerable: true,
+          configurable: true
+        };
+        if (setter) {
+          desc.set = () => throwUnboundTypeError(`Cannot access ${humanName} due to unbound types`, [getterReturnType, setterArgumentType]);
+        } else {
+          desc.set = (v) => throwBindingError(humanName + ' is a read-only property');
+        }
+  
+        Object.defineProperty(classType.registeredClass.instancePrototype, fieldName, desc);
+  
+        whenDependentTypesAreResolved(
+          [],
+          (setter ? [getterReturnType, setterArgumentType] : [getterReturnType]),
+        (types) => {
+          var getterReturnType = types[0];
+          var desc = {
+            get() {
+              var ptr = validateThis(this, classType, humanName + ' getter');
+              return getterReturnType.fromWireType(getter(getterContext, ptr));
+            },
+            enumerable: true
+          };
+  
+          if (setter) {
+            setter = embind__requireFunction(setterSignature, setter);
+            var setterArgumentType = types[1];
+            desc.set = function(v) {
+              var ptr = validateThis(this, classType, humanName + ' setter');
+              var destructors = [];
+              setter(setterContext, ptr, setterArgumentType.toWireType(destructors, v));
+              runDestructors(destructors);
+            };
+          }
+  
+          Object.defineProperty(classType.registeredClass.instancePrototype, fieldName, desc);
+          return [];
+        });
+  
+        return [];
+      });
+    };
+
+  
   var emval_freelist = [];
   
   var emval_handles = [0,1,,1,null,1,true,1,false,1];
@@ -3610,7 +3696,6 @@ Module['FS_createPreloadedFile'] = FS.createPreloadedFile;
   'getLiveInheritedInstances',
   'enumReadValueFromPointer',
   'setDelayFunction',
-  'validateThis',
   'count_emval_handles',
 ];
 missingLibrarySymbols.forEach(missingLibrarySymbol)
@@ -3906,6 +3991,7 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'shallowCopyInternalPointer',
   'downcastPointer',
   'upcastPointer',
+  'validateThis',
   'char_0',
   'char_9',
   'makeLegalFunctionName',
@@ -4047,6 +4133,8 @@ var wasmImports = {
   /** @export */
   _embind_register_class_function: __embind_register_class_function,
   /** @export */
+  _embind_register_class_property: __embind_register_class_property,
+  /** @export */
   _embind_register_emval: __embind_register_emval,
   /** @export */
   _embind_register_float: __embind_register_float,
@@ -4175,6 +4263,17 @@ function invoke_vi(index,a1) {
   }
 }
 
+function invoke_viiii(index,a1,a2,a3,a4) {
+  var sp = stackSave();
+  try {
+    getWasmTableEntry(index)(a1,a2,a3,a4);
+  } catch(e) {
+    stackRestore(sp);
+    if (!(e instanceof EmscriptenEH)) throw e;
+    _setThrew(1, 0);
+  }
+}
+
 function invoke_vii(index,a1,a2) {
   var sp = stackSave();
   try {
@@ -4219,17 +4318,6 @@ function invoke_viii(index,a1,a2,a3) {
   }
 }
 
-function invoke_viiii(index,a1,a2,a3,a4) {
-  var sp = stackSave();
-  try {
-    getWasmTableEntry(index)(a1,a2,a3,a4);
-  } catch(e) {
-    stackRestore(sp);
-    if (!(e instanceof EmscriptenEH)) throw e;
-    _setThrew(1, 0);
-  }
-}
-
 function invoke_v(index) {
   var sp = stackSave();
   try {
@@ -4245,6 +4333,17 @@ function invoke_viiiii(index,a1,a2,a3,a4,a5) {
   var sp = stackSave();
   try {
     getWasmTableEntry(index)(a1,a2,a3,a4,a5);
+  } catch(e) {
+    stackRestore(sp);
+    if (!(e instanceof EmscriptenEH)) throw e;
+    _setThrew(1, 0);
+  }
+}
+
+function invoke_iiiii(index,a1,a2,a3,a4) {
+  var sp = stackSave();
+  try {
+    return getWasmTableEntry(index)(a1,a2,a3,a4);
   } catch(e) {
     stackRestore(sp);
     if (!(e instanceof EmscriptenEH)) throw e;
@@ -4278,17 +4377,6 @@ function invoke_iiiiii(index,a1,a2,a3,a4,a5) {
   var sp = stackSave();
   try {
     return getWasmTableEntry(index)(a1,a2,a3,a4,a5);
-  } catch(e) {
-    stackRestore(sp);
-    if (!(e instanceof EmscriptenEH)) throw e;
-    _setThrew(1, 0);
-  }
-}
-
-function invoke_iiiii(index,a1,a2,a3,a4) {
-  var sp = stackSave();
-  try {
-    return getWasmTableEntry(index)(a1,a2,a3,a4);
   } catch(e) {
     stackRestore(sp);
     if (!(e instanceof EmscriptenEH)) throw e;

@@ -1,5 +1,24 @@
+// Approach taken:
+//   Primary bindings for ContentBlock, ParseError, SessionEntry, Session (existing).
+//   Schema types (FieldStats, ColumnNode, RawSchema) added per Task 12.
+//
+//   std::optional<double> fields (numeric_min, numeric_max, array_avg_length,
+//   array_max_length) on FieldStats cannot be bound directly via .field() because
+//   Emscripten value_object does not know how to convert std::optional<T>.
+//   Fallback applied: helper functions in schema.hpp expose has_*/get_* pairs,
+//   bound as computed fields via .field("name", &fn).
+//
+//   std::optional<RawSchema> on Session likewise cannot be bound directly.
+//   Fallback applied: hasRawSchema / getRawSchema exported as free functions.
+//
+//   ColumnNode uses class_<> (not value_object<>) because it is self-referential
+//   (contains std::vector<ColumnNode>); value_object semantics require a complete
+//   copyable value type without reference cycles, which recursive vectors violate
+//   in Emscripten's Embind.
+
 #include <emscripten/bind.h>
 #include "parser.hpp"
+#include "schema.hpp"
 
 using namespace emscripten;
 
@@ -26,10 +45,53 @@ EMSCRIPTEN_BINDINGS(session_parser) {
     register_vector<SessionEntry>("VectorSessionEntry");
     register_vector<ParseError>("VectorParseError");
 
+    // Schema types
+    value_object<std::pair<std::string, int>>("StringCount")
+        .field("value", &std::pair<std::string, int>::first)
+        .field("count", &std::pair<std::string, int>::second);
+    register_vector<std::pair<std::string, int>>("VectorStringCount");
+
+    register_map<std::string, int>("MapStringInt");
+
+    // FieldStats: optional<double> fields exposed via getter/setter pairs
+    // (defined in schema.hpp) because Emscripten value_object .field() requires
+    // both a getter and setter; setters are no-ops since these are read-only from JS.
+    value_object<FieldStats>("FieldStats")
+        .field("presentCount", &FieldStats::present_count)
+        .field("nullCount", &FieldStats::null_count)
+        .field("typeCounts", &FieldStats::type_counts)
+        .field("topValues", &FieldStats::top_values)
+        .field("hasNumericMin",    &has_numeric_min,      &set_has_numeric_min)
+        .field("numericMin",       &get_numeric_min,      &set_numeric_min)
+        .field("hasNumericMax",    &has_numeric_max,      &set_has_numeric_max)
+        .field("numericMax",       &get_numeric_max,      &set_numeric_max)
+        .field("hasArrayAvgLength",&has_array_avg_length, &set_has_array_avg_length)
+        .field("arrayAvgLength",   &get_array_avg_length, &set_array_avg_length)
+        .field("hasArrayMaxLength",&has_array_max_length, &set_has_array_max_length)
+        .field("arrayMaxLength",   &get_array_max_length, &set_array_max_length);
+
+    // ColumnNode uses class_<> because it is recursive (contains vector<ColumnNode>).
+    class_<ColumnNode>("ColumnNode")
+        .property("name", &ColumnNode::name)
+        .property("path", &ColumnNode::path)
+        .property("kind", &ColumnNode::kind)
+        .property("children", &ColumnNode::children)
+        .property("stats", &ColumnNode::stats);
+    register_vector<ColumnNode>("VectorColumnNode");
+
+    value_object<RawSchema>("RawSchema")
+        .field("columns", &RawSchema::columns)
+        .field("recordCount", &RawSchema::record_count);
+
+    // Session: raw_schema is std::optional<RawSchema>; cannot bind directly.
+    // Exposed via hasRawSchema / getRawSchema free functions instead.
     value_object<Session>("Session")
         .field("title", &Session::title)
         .field("entries", &Session::entries)
         .field("errors", &Session::errors);
+
+    function("hasRawSchema", &has_raw_schema);
+    function("getRawSchema", &get_raw_schema);
 
     function("parseSession", &parse_session);
 }

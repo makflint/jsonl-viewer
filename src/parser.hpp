@@ -157,3 +157,8 @@ struct Session {
     }
     return session;
 }
+
+// WASM binding helpers: std::optional<RawSchema> on Session cannot be bound
+// directly via value_object .field(); expose as free functions instead.
+inline bool      has_raw_schema(const Session& s) { return s.raw_schema.has_value(); }
+inline RawSchema get_raw_schema(const Session& s) { return s.raw_schema.value_or(RawSchema{}); }

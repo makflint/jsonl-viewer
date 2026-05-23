@@ -122,3 +122,23 @@ inline void finalize_column(ColumnNode& col) {
     for (auto& col : schema.columns) finalize_column(col);
     return schema;
 }
+
+// WASM binding helpers: Emscripten cannot bind std::optional<T> directly via
+// value_object .field(), so these has_*/get_* getter/setter pairs expose optional
+// fields safely. Setters are no-ops (fields are logically read-only from JS).
+inline bool   has_numeric_min(const FieldStats& s)           { return s.numeric_min.has_value(); }
+inline double get_numeric_min(const FieldStats& s)           { return s.numeric_min.value_or(0.0); }
+inline void   set_has_numeric_min(FieldStats&, bool)         {}
+inline void   set_numeric_min(FieldStats&, double)           {}
+inline bool   has_numeric_max(const FieldStats& s)           { return s.numeric_max.has_value(); }
+inline double get_numeric_max(const FieldStats& s)           { return s.numeric_max.value_or(0.0); }
+inline void   set_has_numeric_max(FieldStats&, bool)         {}
+inline void   set_numeric_max(FieldStats&, double)           {}
+inline bool   has_array_avg_length(const FieldStats& s)      { return s.array_avg_length.has_value(); }
+inline double get_array_avg_length(const FieldStats& s)      { return s.array_avg_length.value_or(0.0); }
+inline void   set_has_array_avg_length(FieldStats&, bool)    {}
+inline void   set_array_avg_length(FieldStats&, double)      {}
+inline bool   has_array_max_length(const FieldStats& s)      { return s.array_max_length.has_value(); }
+inline double get_array_max_length(const FieldStats& s)      { return s.array_max_length.value_or(0.0); }
+inline void   set_has_array_max_length(FieldStats&, bool)    {}
+inline void   set_array_max_length(FieldStats&, double)      {}
