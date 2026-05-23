@@ -246,6 +246,29 @@ test('renderMarkdown uses DOMPurify when available', () => {
     delete global.DOMPurify;
 });
 
+test('renderContentBlock renders raw block as JSON code', () => {
+    const html = renderContentBlock(makeBlock({ type: 'raw', text: '{\n  "nr_kw": "KA1K/00000001/9"\n}' }));
+
+    assert(html.includes('content-block'), 'should have content-block class');
+    assert(html.includes('raw'), 'should have raw class');
+    assert(html.includes('nr_kw'), 'should contain JSON field name');
+    assert(html.includes('KA1K/00000001/9'), 'should contain JSON value');
+    assert(html.includes('hljs-json'), 'should syntax-highlight as JSON');
+});
+
+test('entryClass returns raw for raw type', () => {
+    assert.strictEqual(entryClass('raw'), 'raw');
+});
+
+test('renderEntry shows raw entries by default (not metadata-hidden)', () => {
+    const entry = makeEntry({ type: 'raw', content: vec([makeBlock({ type: 'raw', text: '{"foo":"bar"}' })]) });
+
+    const html = renderEntry(entry);
+
+    assert(html.includes('class="entry raw"'), 'should use raw class');
+    assert(!html.includes('hidden'), 'raw entry should be visible by default');
+});
+
 test('renderEntry classifies unknown type as metadata', () => {
     const entry = makeEntry({ type: 'unknown', content: vec([makeBlock({ text: 'data' })]) });
 
