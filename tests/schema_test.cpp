@@ -106,3 +106,16 @@ TEST_CASE("analyze_raw_schema recurses into nested objects") {
     REQUIRE(schema.columns[0].children[1].name == "typ_nieruchomosci");
     REQUIRE(schema.columns[0].children[1].path == "dzial_1o.typ_nieruchomosci");
 }
+
+TEST_CASE("analyze_raw_schema records all types for heterogeneous field") {
+    std::vector<nlohmann::json> entries = {
+        nlohmann::json::parse(R"({"x":"abc"})"),
+        nlohmann::json::parse(R"({"x":42})"),
+        nlohmann::json::parse(R"({"x":42})")
+    };
+
+    auto schema = analyze_raw_schema(entries);
+
+    REQUIRE(schema.columns[0].stats.type_counts["string"] == 1);
+    REQUIRE(schema.columns[0].stats.type_counts["number"] == 2);
+}
