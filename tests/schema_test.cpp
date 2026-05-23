@@ -71,3 +71,18 @@ TEST_CASE("analyze_raw_schema collects top string values sorted by frequency") {
     REQUIRE(top[2].first == "inny");
     REQUIRE(top[2].second == 1);
 }
+
+TEST_CASE("analyze_raw_schema captures array length stats and kind") {
+    std::vector<nlohmann::json> entries = {
+        nlohmann::json::parse(R"({"dzial_3":[1,2,3]})"),
+        nlohmann::json::parse(R"({"dzial_3":[]})"),
+        nlohmann::json::parse(R"({"dzial_3":[1,2,3,4,5]})")
+    };
+
+    auto schema = analyze_raw_schema(entries);
+
+    REQUIRE(schema.columns[0].kind == "array_summary");
+    REQUIRE(schema.columns[0].stats.array_max_length.has_value());
+    REQUIRE(*schema.columns[0].stats.array_max_length == 5.0);
+    REQUIRE(*schema.columns[0].stats.array_avg_length == Catch::Approx(8.0 / 3.0));
+}
