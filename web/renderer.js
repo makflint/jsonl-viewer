@@ -351,32 +351,43 @@ function mapEntries(m) {
     return Object.entries(m || {});
 }
 
-function statsForLeaf(stats) {
+function statsForLeaf(stats, kind) {
     const parts = [];
-    // Type breakdown
-    const typeStrs = [];
-    for (const [k, v] of mapEntries(stats.typeCounts)) {
-        typeStrs.push(`${escapeHtml(k)}: ${v}`);
-    }
-    if (typeStrs.length) parts.push(typeStrs.join(', '));
-    // Numeric range
-    const hasMin = stats.hasNumericMin !== undefined ? stats.hasNumericMin : stats.numericMin !== undefined;
-    if (hasMin) parts.push(`range: ${stats.numericMin} .. ${stats.numericMax}`);
-    // Top values
-    if (stats.topValues) {
-        const len = vecLen(stats.topValues);
-        if (len > 0) {
-            const top = [];
-            for (let i = 0; i < len; i++) {
-                const tv = vecGet(stats.topValues, i);
-                top.push(`${escapeHtml(tv.value)} (${tv.count})`);
+    const hasArrAvg = stats.hasArrayAvgLength !== undefined ? stats.hasArrayAvgLength : stats.arrayAvgLength !== undefined;
+    if (kind === 'array_summary' && hasArrAvg) {
+        const max = Math.round(stats.arrayMaxLength);
+        parts.push(`0 .. ${max} items per record, avg ${stats.arrayAvgLength.toFixed(1)}`);
+        if (stats.topValues) {
+            const len = vecLen(stats.topValues);
+            if (len > 0) {
+                const top = [];
+                for (let i = 0; i < len; i++) {
+                    const tv = vecGet(stats.topValues, i);
+                    top.push(`${escapeHtml(tv.value)} (${tv.count})`);
+                }
+                parts.push(`top: ${top.join(', ')}`);
             }
-            parts.push(`top: ${top.join(', ')}`);
+        }
+    } else {
+        const typeStrs = [];
+        for (const [k, v] of mapEntries(stats.typeCounts)) {
+            typeStrs.push(`${escapeHtml(k)}: ${v}`);
+        }
+        if (typeStrs.length) parts.push(typeStrs.join(', '));
+        const hasMin = stats.hasNumericMin !== undefined ? stats.hasNumericMin : stats.numericMin !== undefined;
+        if (hasMin) parts.push(`range: ${stats.numericMin} .. ${stats.numericMax}`);
+        if (stats.topValues) {
+            const len = vecLen(stats.topValues);
+            if (len > 0) {
+                const top = [];
+                for (let i = 0; i < len; i++) {
+                    const tv = vecGet(stats.topValues, i);
+                    top.push(`${escapeHtml(tv.value)} (${tv.count})`);
+                }
+                parts.push(`top: ${top.join(', ')}`);
+            }
         }
     }
-    // Array stats
-    const hasArrAvg = stats.hasArrayAvgLength !== undefined ? stats.hasArrayAvgLength : stats.arrayAvgLength !== undefined;
-    if (hasArrAvg) parts.push(`avg length: ${stats.arrayAvgLength.toFixed(1)}, max: ${stats.arrayMaxLength}`);
     return parts.join('<br>');
 }
 
@@ -384,12 +395,14 @@ function renderStatsRow(col, recordCount, depth) {
     const indent = '&nbsp;'.repeat(depth * 2);
     const presence = `${col.stats.presentCount || 0}/${recordCount}`;
     const pct = recordCount > 0 ? Math.round(100 * (col.stats.presentCount || 0) / recordCount) : 0;
-    const nullPart = col.stats.nullCount ? ` &nbsp; null: ${col.stats.nullCount}` : '';
+    const nullCount = col.stats.nullCount || 0;
+    const nullPct = recordCount > 0 ? Math.round(100 * nullCount / recordCount) : 0;
+    const nullPart = nullCount ? ` &nbsp; null: ${nullCount} (${nullPct}%)` : '';
     let html = `<tr>
         <td class="stats-name">${indent}${escapeHtml(col.path)}</td>
         <td class="stats-kind">${escapeHtml(col.kind)}</td>
         <td class="stats-presence">${presence} (${pct}%)${nullPart}</td>
-        <td class="stats-detail">${statsForLeaf(col.stats)}</td>
+        <td class="stats-detail">${statsForLeaf(col.stats, col.kind)}</td>
     </tr>`;
     if (col.kind === 'object') {
         const len = vecLen(col.children);
@@ -406,7 +419,9 @@ function renderSchemaStats(schema) {
             <h3>Schema statistics (${schema.recordCount} records)</h3>
             <a href="#" class="jump-link" onclick="document.getElementById('tabTable').click(); return false;">→ jump to table</a>
         </div>
-        <table class="stats-table"><tbody>`;
+        <table class="stats-table"><thead><tr>
+            <th>Field</th><th>Kind</th><th>Presence</th><th>Details</th>
+        </tr></thead><tbody>`;
     const len = vecLen(schema.columns);
     for (let i = 0; i < len; i++) {
         html += renderStatsRow(vecGet(schema.columns, i), schema.recordCount, 0);

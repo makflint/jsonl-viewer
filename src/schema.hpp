@@ -93,6 +93,18 @@ inline void merge_value(ColumnNode& col, const nlohmann::json& value) {
         if (!col.stats.array_max_length || len > *col.stats.array_max_length) col.stats.array_max_length = len;
         col._array_length_sum += len;
         col._array_length_count++;
+        for (const auto& item : value) {
+            if (item.is_string()) {
+                col._string_counts[item.get<std::string>()]++;
+            } else if (item.is_object()) {
+                for (auto it = item.begin(); it != item.end(); ++it) {
+                    if (it.value().is_string()) {
+                        col._string_counts[it.value().get<std::string>()]++;
+                        break;
+                    }
+                }
+            }
+        }
     }
     if (value.is_object()) {
         merge_object(col.children, col._child_index, col.path, value);
