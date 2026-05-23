@@ -26,3 +26,9 @@ struct RawSchema {
     std::vector<ColumnNode> columns;
     int record_count = 0;
 };
+
+[[nodiscard]] inline RawSchema analyze_raw_schema(const std::vector<nlohmann::json>& entries) {
+    RawSchema schema;
+    schema.record_count = static_cast<int>(entries.size());
+    return schema;
+}
