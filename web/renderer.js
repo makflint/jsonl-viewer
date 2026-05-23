@@ -281,6 +281,62 @@ function summarizeArrayCell(arr) {
     return joined.slice(0, 200) + "...";
 }
 
+function collectLeafColumns(columns) {
+    const leaves = [];
+    function walk(col) {
+        if (col.kind === 'object') {
+            const len = vecLen(col.children);
+            for (let i = 0; i < len; i++) walk(vecGet(col.children, i));
+        } else {
+            leaves.push(col);
+        }
+    }
+    const len = vecLen(columns);
+    for (let i = 0; i < len; i++) walk(vecGet(columns, i));
+    return leaves;
+}
+
+function formatCell(value, kind) {
+    if (value === null || value === undefined) return '<span class="cell-null">—</span>';
+    if (kind === 'array_summary') {
+        const summary = summarizeArrayCell(value);
+        return summary === "" ? '<span class="cell-null">—</span>' : escapeHtml(summary);
+    }
+    return escapeHtml(String(value));
+}
+
+function renderRawTable(rawEntries, schema) {
+    const topCols = [];
+    const len = vecLen(schema.columns);
+    for (let i = 0; i < len; i++) topCols.push(vecGet(schema.columns, i));
+
+    const headerRows = buildHeaderRows(topCols);
+    const leafCols = collectLeafColumns(schema.columns);
+
+    let html = '<table class="raw-table"><thead>';
+    for (const row of headerRows) {
+        html += '<tr>';
+        for (const cell of row) {
+            const attrs = ` data-path="${escapeHtml(cell.path)}"`
+                       + (cell.colspan > 1 ? ` colspan="${cell.colspan}"` : '')
+                       + (cell.rowspan > 1 ? ` rowspan="${cell.rowspan}"` : '');
+            html += `<th${attrs}>${escapeHtml(cell.name)}</th>`;
+        }
+        html += '</tr>';
+    }
+    html += '</thead><tbody>';
+    for (const entry of rawEntries) {
+        html += '<tr>';
+        for (const col of leafCols) {
+            const value = extractCellValue(entry, col.path);
+            html += `<td data-path="${escapeHtml(col.path)}">${formatCell(value, col.kind)}</td>`;
+        }
+        html += '</tr>';
+    }
+    html += '</tbody></table>';
+    return html;
+}
+
 if (typeof module !== 'undefined') {
-    module.exports = { escapeHtml, formatTimestamp, entryClass, renderMarkdown, isJsonl, renderContentBlock, renderEntry, renderSession, extractCellValue, summarizeArrayCell, buildHeaderRows };
+    module.exports = { escapeHtml, formatTimestamp, entryClass, renderMarkdown, isJsonl, renderContentBlock, renderEntry, renderSession, extractCellValue, summarizeArrayCell, buildHeaderRows, renderRawTable };
 }
