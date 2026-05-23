@@ -55,6 +55,7 @@ struct RawSchema {
             }
             auto& col = schema.columns[column_index[key]];
             col.stats.present_count++;
+            if (value.is_null()) col.stats.null_count++;
             col.stats.type_counts[json_type_name(value)]++;
         }
     }
