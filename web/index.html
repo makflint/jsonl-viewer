@@ -259,9 +259,11 @@
     <div class="view-tabs" id="viewTabs" style="display:none">
         <button class="view-tab active" data-view="json" id="tabJson">JSON view</button>
         <button class="view-tab" data-view="table" id="tabTable">Table view</button>
+        <button class="view-tab" data-view="schema" id="tabSchema">Schema</button>
     </div>
     <div id="outputJson"></div>
     <div id="outputTable" style="display:none"></div>
+    <div id="outputSchema" style="display:none"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" async></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js" async></script>
@@ -321,6 +323,7 @@
                 const view = tab.dataset.view;
                 document.getElementById('outputJson').style.display = view === 'json' ? '' : 'none';
                 document.getElementById('outputTable').style.display = view === 'table' ? '' : 'none';
+                document.getElementById('outputSchema').style.display = view === 'schema' ? '' : 'none';
             });
         });
 
@@ -394,9 +397,8 @@
                         try { rawEntriesJson.push(JSON.parse(e.content.get(0).text)); } catch(_) {}
                     }
                 }
-                const tableHtml = '<div id="raw-table">' + renderRawTable(rawEntriesJson, schema) + '</div>';
-                const statsHtml = renderSchemaStats(schema);
-                document.getElementById('outputTable').innerHTML = tableHtml + statsHtml;
+                document.getElementById('outputTable').innerHTML = '<div id="raw-table">' + renderRawTable(rawEntriesJson, schema) + '</div>';
+                document.getElementById('outputSchema').innerHTML = renderSchemaStats(schema);
             }
         }
     </script>

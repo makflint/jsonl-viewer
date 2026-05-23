@@ -404,7 +404,7 @@ function renderSchemaStats(schema) {
     let html = `<div class="schema-stats">
         <div class="schema-stats-header">
             <h3>Schema statistics (${schema.recordCount} records)</h3>
-            <a href="#raw-table" class="jump-link">↑ jump to table</a>
+            <a href="#" class="jump-link" onclick="document.getElementById('tabTable').click(); return false;">→ jump to table</a>
         </div>
         <table class="stats-table"><tbody>`;
     const len = vecLen(schema.columns);
