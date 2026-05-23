@@ -427,3 +427,27 @@ test('extractCellValue returns null when value is null', () => {
     const { extractCellValue } = require('../web/renderer.js');
     assert.strictEqual(extractCellValue({typ: null}, "typ"), null);
 });
+
+test('summarizeArrayCell joins scalar array values', () => {
+    const { summarizeArrayCell } = require('../web/renderer.js');
+    assert.strictEqual(summarizeArrayCell([1, 2, 3]), "1, 2, 3");
+});
+
+test('summarizeArrayCell joins first string field of object array', () => {
+    const { summarizeArrayCell } = require('../web/renderer.js');
+    const arr = [{tresc: "A", data: null}, {tresc: "B", data: null}];
+    assert.strictEqual(summarizeArrayCell(arr), "A, B");
+});
+
+test('summarizeArrayCell returns empty string for empty array', () => {
+    const { summarizeArrayCell } = require('../web/renderer.js');
+    assert.strictEqual(summarizeArrayCell([]), "");
+});
+
+test('summarizeArrayCell truncates at ~200 chars with ellipsis', () => {
+    const { summarizeArrayCell } = require('../web/renderer.js');
+    const long = Array(50).fill("OGRANICZONE_PRAWO_RZECZOWE");
+    const result = summarizeArrayCell(long);
+    assert(result.length <= 203, `result was ${result.length} chars: ${result}`);
+    assert(result.endsWith("..."), "should end with ellipsis");
+});
