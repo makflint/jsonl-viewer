@@ -56,6 +56,8 @@ struct RawSchema {
 
     std::map<std::string, size_t> column_index;
     std::vector<std::map<std::string, int>> string_counts;  // parallel to schema.columns
+    std::vector<double> array_length_sum;
+    std::vector<int> array_length_count;
 
     for (const auto& entry : entries) {
         if (!entry.is_object()) continue;
@@ -64,8 +66,13 @@ struct RawSchema {
             const auto& value = it.value();
             if (column_index.find(key) == column_index.end()) {
                 column_index[key] = schema.columns.size();
-                schema.columns.push_back(ColumnNode{.name = key, .path = key, .kind = "leaf"});
+                std::string kind = value.is_array() ? "array_summary"
+                                  : value.is_object() ? "object"
+                                  : "leaf";
+                schema.columns.push_back(ColumnNode{.name = key, .path = key, .kind = kind});
                 string_counts.emplace_back();
+                array_length_sum.push_back(0.0);
+                array_length_count.push_back(0);
             }
             auto idx = column_index[key];
             auto& col = schema.columns[idx];
@@ -80,12 +87,21 @@ struct RawSchema {
             if (value.is_string()) {
                 string_counts[idx][value.get<std::string>()]++;
             }
+            if (value.is_array()) {
+                double len = static_cast<double>(value.size());
+                if (!col.stats.array_max_length || len > *col.stats.array_max_length) col.stats.array_max_length = len;
+                array_length_sum[idx] += len;
+                array_length_count[idx]++;
+            }
         }
     }
 
     // Materialize top-5 per column
     for (size_t i = 0; i < schema.columns.size(); ++i) {
         schema.columns[i].stats.top_values = top_n_by_frequency(string_counts[i], 5);
+        if (array_length_count[i] > 0) {
+            schema.columns[i].stats.array_avg_length = array_length_sum[i] / array_length_count[i];
+        }
     }
 
     return schema;
