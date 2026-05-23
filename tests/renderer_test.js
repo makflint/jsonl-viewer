@@ -545,3 +545,58 @@ test('renderRawTable renders nested object as separate cells', () => {
     const html = renderRawTable(entries, schema);
     assert(html.includes('634'), 'should render nested leaf value');
 });
+
+test('renderSchemaStats shows record count and field presence', () => {
+    const { renderSchemaStats } = require('../web/renderer.js');
+    const schema = {
+        recordCount: 79,
+        columns: vec([
+            {name: "nr_kw", path: "nr_kw", kind: "leaf", children: vec([]), stats: {
+                presentCount: 79, nullCount: 0, typeCounts: {string: 79}, topValues: vec([])
+            }}
+        ])
+    };
+    const html = renderSchemaStats(schema);
+    assert(html.includes('79 records'), 'should show record count');
+    assert(html.includes('nr_kw'), 'should list field');
+    assert(html.includes('79/79'), 'should show presence');
+});
+
+test('renderSchemaStats shows numeric min and max', () => {
+    const { renderSchemaStats } = require('../web/renderer.js');
+    const schema = {
+        recordCount: 3,
+        columns: vec([
+            {name: "pow", path: "pow", kind: "leaf", children: vec([]), stats: {
+                presentCount: 3, nullCount: 0, typeCounts: {number: 3}, topValues: vec([]),
+                hasNumericMin: true, numericMin: 5,
+                hasNumericMax: true, numericMax: 3097
+            }}
+        ])
+    };
+    const html = renderSchemaStats(schema);
+    assert(html.includes('5') && html.includes('3097'), 'should show min and max');
+});
+
+test('renderSchemaStats shows top values for string field', () => {
+    const { renderSchemaStats } = require('../web/renderer.js');
+    const schema = {
+        recordCount: 8,
+        columns: vec([
+            {name: "typ", path: "typ", kind: "leaf", children: vec([]), stats: {
+                presentCount: 8, nullCount: 0, typeCounts: {string: 8},
+                topValues: vec([{value: "gruntowa", count: 5}, {value: "lokalowa", count: 3}])
+            }}
+        ])
+    };
+    const html = renderSchemaStats(schema);
+    assert(html.includes('gruntowa'), 'should show top value');
+    assert(html.includes('5'), 'should show top count');
+});
+
+test('renderSchemaStats includes jump-to-table link', () => {
+    const { renderSchemaStats } = require('../web/renderer.js');
+    const schema = {recordCount: 0, columns: vec([])};
+    const html = renderSchemaStats(schema);
+    assert(html.includes('jump to table') || html.includes('Jump to table'), 'should have jump link');
+});
