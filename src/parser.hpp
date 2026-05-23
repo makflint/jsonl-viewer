@@ -6,6 +6,7 @@
 #include <sstream>
 #include <vector>
 #include "../third_party/json.hpp"
+#include "schema.hpp"
 
 using json = nlohmann::json;
 
@@ -34,6 +35,7 @@ struct Session {
     std::string title;
     std::vector<SessionEntry> entries;
     std::vector<ParseError> errors;
+    std::optional<RawSchema> raw_schema;
     SessionEntry& operator[](size_t i) { return entries[i]; }
     const SessionEntry& operator[](size_t i) const { return entries[i]; }
     size_t size() const { return entries.size(); }
@@ -126,6 +128,7 @@ struct Session {
 
 [[nodiscard]] inline Session parse_session(const std::string& jsonl) {
     Session session;
+    std::vector<json> raw_entries_json;
     std::istringstream stream(jsonl);
     std::string line;
     int line_number = 0;
@@ -144,7 +147,13 @@ struct Session {
         }
         auto entry = parse_entry(*parsed);
         entry.line_number = line_number;
+        if (entry.type == "raw") {
+            raw_entries_json.push_back(*parsed);
+        }
         session.entries.push_back(std::move(entry));
+    }
+    if (!raw_entries_json.empty()) {
+        session.raw_schema = analyze_raw_schema(raw_entries_json);
     }
     return session;
 }
