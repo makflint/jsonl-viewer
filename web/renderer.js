@@ -194,6 +194,16 @@ function isJsonl(text) {
     try { JSON.parse(firstLine); return true; } catch(e) { return false; }
 }
 
+function extractCellValue(obj, path) {
+    const parts = path.split('.');
+    let cur = obj;
+    for (const part of parts) {
+        if (cur === null || cur === undefined || typeof cur !== 'object') return undefined;
+        cur = cur[part];
+    }
+    return cur;
+}
+
 if (typeof module !== 'undefined') {
-    module.exports = { escapeHtml, formatTimestamp, entryClass, renderMarkdown, isJsonl, renderContentBlock, renderEntry, renderSession };
+    module.exports = { escapeHtml, formatTimestamp, entryClass, renderMarkdown, isJsonl, renderContentBlock, renderEntry, renderSession, extractCellValue };
 }
