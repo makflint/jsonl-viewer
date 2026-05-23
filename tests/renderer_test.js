@@ -489,3 +489,59 @@ test('buildHeaderRows produces two rows for one nested object', () => {
     assert.strictEqual(rows[1][0].name, "pow");
     assert.strictEqual(rows[1][1].name, "sposob");
 });
+
+test('renderRawTable renders thead with column names', () => {
+    const { renderRawTable } = require('../web/renderer.js');
+    const schema = {
+        recordCount: 1,
+        columns: vec([
+            {name: "nr_kw", path: "nr_kw", kind: "leaf", children: vec([]), stats: {}}
+        ])
+    };
+    const entries = [{nr_kw: "ABC"}];
+    const html = renderRawTable(entries, schema);
+    assert(html.includes('<th'), 'should have th tags');
+    assert(html.includes('nr_kw'), 'should include column name');
+    assert(html.includes('ABC'), 'should include cell value');
+});
+
+test('renderRawTable renders null cells as em-dash', () => {
+    const { renderRawTable } = require('../web/renderer.js');
+    const schema = {
+        recordCount: 1,
+        columns: vec([
+            {name: "typ", path: "typ", kind: "leaf", children: vec([]), stats: {}}
+        ])
+    };
+    const entries = [{typ: null}];
+    const html = renderRawTable(entries, schema);
+    assert(html.includes('—'), 'should render null as em-dash');
+});
+
+test('renderRawTable renders array cell as comma-joined summary', () => {
+    const { renderRawTable } = require('../web/renderer.js');
+    const schema = {
+        recordCount: 1,
+        columns: vec([
+            {name: "dzial_3", path: "dzial_3", kind: "array_summary", children: vec([]), stats: {}}
+        ])
+    };
+    const entries = [{dzial_3: [{tresc: "A"}, {tresc: "B"}]}];
+    const html = renderRawTable(entries, schema);
+    assert(html.includes('A, B'), 'should comma-join array items');
+});
+
+test('renderRawTable renders nested object as separate cells', () => {
+    const { renderRawTable } = require('../web/renderer.js');
+    const schema = {
+        recordCount: 1,
+        columns: vec([
+            {name: "dzial_1o", path: "dzial_1o", kind: "object", stats: {}, children: vec([
+                {name: "pow", path: "dzial_1o.pow", kind: "leaf", children: vec([]), stats: {}}
+            ])}
+        ])
+    };
+    const entries = [{dzial_1o: {pow: 634}}];
+    const html = renderRawTable(entries, schema);
+    assert(html.includes('634'), 'should render nested leaf value');
+});
