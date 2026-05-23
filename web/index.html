@@ -172,6 +172,80 @@
             margin-bottom: 12px;
             color: #f38ba8;
         }
+        .view-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #585b70;
+        }
+        .view-tab {
+            background: transparent;
+            color: #bac2de;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 0.9em;
+            border-bottom: 2px solid transparent;
+        }
+        .view-tab.active {
+            color: #cba6f7;
+            border-bottom-color: #cba6f7;
+        }
+        .raw-table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.85em;
+            background: #1e1e2e;
+        }
+        .raw-table thead { background: #313244; position: sticky; top: 0; }
+        .raw-table th, .raw-table td {
+            border: 1px solid #313244;
+            padding: 4px 8px;
+            text-align: left;
+            white-space: nowrap;
+            max-width: 30em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .raw-table th {
+            color: #cba6f7;
+            font-weight: bold;
+            cursor: context-menu;
+        }
+        .raw-table th[colspan] { text-align: center; color: #89b4fa; border-bottom: 1px solid #585b70; }
+        .raw-table .cell-null { color: #6c7086; }
+        .raw-table tbody tr:hover { background: #292c3c; }
+        .raw-table th.col-hidden, .raw-table td.col-hidden { display: none; }
+        .schema-stats { margin-top: 24px; font-family: monospace; }
+        .schema-stats-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .jump-link { color: #89b4fa; text-decoration: none; font-size: 0.9em; }
+        .jump-link:hover { text-decoration: underline; }
+        .stats-table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+        .stats-table td { padding: 6px 12px; vertical-align: top; border-bottom: 1px solid #313244; }
+        .stats-name { color: #cba6f7; }
+        .stats-kind { color: #6c7086; }
+        .stats-presence { color: #bac2de; }
+        .stats-detail { color: #a6adc8; }
+        .col-context-menu {
+            position: absolute;
+            background: #313244;
+            border: 1px solid #585b70;
+            border-radius: 4px;
+            padding: 4px 0;
+            z-index: 1000;
+            font-size: 0.85em;
+        }
+        .col-context-menu button {
+            display: block;
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #cdd6f4;
+            padding: 6px 16px;
+            text-align: left;
+            cursor: pointer;
+        }
+        .col-context-menu button:hover { background: #45475a; }
     </style>
 </head>
 <body>
@@ -181,7 +255,12 @@
         <input type="file" id="fileInput" accept=".jsonl">
     </div>
     <button class="toggle-metadata" id="toggleMetadata" style="display:none">Show metadata</button>
-    <div id="output"></div>
+    <div class="view-tabs" id="viewTabs" style="display:none">
+        <button class="view-tab active" data-view="json" id="tabJson">JSON view</button>
+        <button class="view-tab" data-view="table" id="tabTable">Table view</button>
+    </div>
+    <div id="outputJson"></div>
+    <div id="outputTable" style="display:none"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" async></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js" async></script>
@@ -192,11 +271,10 @@
     <script>
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
-        const output = document.getElementById('output');
         let parserModule = null;
 
         ParserModule().then(mod => { parserModule = mod; }).catch(() => {
-            output.innerHTML = '<div class="errors">Failed to load WebAssembly parser module.</div>';
+            document.getElementById('outputJson').innerHTML = '<div class="errors">Failed to load WebAssembly parser module.</div>';
         });
 
         dropZone.addEventListener('click', () => fileInput.click());
@@ -226,7 +304,7 @@
                 ? 'Hide metadata' : 'Show metadata';
         });
 
-        output.addEventListener('click', e => {
+        document.getElementById('outputJson').addEventListener('click', e => {
             const toggle = e.target.closest('.thinking, .tool-use');
             if (toggle) toggle.classList.toggle('open');
         });
@@ -235,14 +313,46 @@
             marked.setOptions({ highlight: (code, lang) => hljs.highlight(code, { language: lang || 'plaintext' }).value });
         }
 
+        document.querySelectorAll('.view-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const view = tab.dataset.view;
+                document.getElementById('outputJson').style.display = view === 'json' ? '' : 'none';
+                document.getElementById('outputTable').style.display = view === 'table' ? '' : 'none';
+            });
+        });
+
+        let currentSession = null;
+
         function displaySession(jsonl) {
             if (!isJsonl(jsonl)) {
-                output.innerHTML = '<div class="errors">File does not appear to be JSONL — first line is not valid JSON.</div>';
+                document.getElementById('outputJson').innerHTML = '<div class="errors">File does not appear to be JSONL — first line is not valid JSON.</div>';
                 return;
             }
             const session = parserModule.parseSession(jsonl);
-            output.innerHTML = renderSession(session);
+            currentSession = session;
+            document.getElementById('outputJson').innerHTML = renderSession(session);
             toggleBtn.style.display = '';
+
+            // Show tabs and render table only when raw schema is present
+            const hasSchema = parserModule.hasRawSchema(session);
+            const tabs = document.getElementById('viewTabs');
+            tabs.style.display = hasSchema ? '' : 'none';
+            if (hasSchema) {
+                const schema = parserModule.getRawSchema(session);
+                const rawEntriesJson = [];
+                const entriesLen = session.entries.size();
+                for (let i = 0; i < entriesLen; i++) {
+                    const e = session.entries.get(i);
+                    if (e.type === 'raw' && e.content.size() > 0) {
+                        try { rawEntriesJson.push(JSON.parse(e.content.get(0).text)); } catch(_) {}
+                    }
+                }
+                const tableHtml = '<div id="raw-table">' + renderRawTable(rawEntriesJson, schema) + '</div>';
+                const statsHtml = renderSchemaStats(schema);
+                document.getElementById('outputTable').innerHTML = tableHtml + statsHtml;
+            }
         }
     </script>
 </body>
