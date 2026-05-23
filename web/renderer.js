@@ -16,7 +16,7 @@ function formatTimestamp(iso) {
 }
 
 function entryClass(type) {
-    if (type === 'user' || type === 'assistant') return type;
+    if (type === 'user' || type === 'assistant' || type === 'raw') return type;
     return 'metadata';
 }
 
@@ -100,10 +100,15 @@ function renderTextBlock(block) {
     return `<div class="content-block${blockClass}">${renderMarkdown(block.text)}</div>`;
 }
 
+function renderRawBlock(block) {
+    return `<div class="content-block raw"><pre><code class="hljs-json">${highlightCode(block.text, 'json')}</code></pre></div>`;
+}
+
 function renderContentBlock(block, toolIndex) {
     if (block.type === 'thinking') return renderThinkingBlock(block);
     if (block.type === 'tool_use') return renderToolUseBlock(block, toolIndex);
     if (block.type === 'tool_result') return renderToolResultBlock(block);
+    if (block.type === 'raw') return renderRawBlock(block);
     return renderTextBlock(block);
 }
 
