@@ -355,7 +355,7 @@ function statsForLeaf(stats) {
             const top = [];
             for (let i = 0; i < len; i++) {
                 const tv = vecGet(stats.topValues, i);
-                top.push(`${tv.value} (${tv.count})`);
+                top.push(`${escapeHtml(tv.value)} (${tv.count})`);
             }
             parts.push(`top: ${top.join(', ')}`);
         }
