@@ -100,18 +100,23 @@ struct Session {
     return blocks;
 }
 
+[[nodiscard]] inline bool is_unmatched_record(const std::string& type, const std::vector<ContentBlock>& content) {
+    return type == "unknown" && content.empty();
+}
+
+[[nodiscard]] inline ContentBlock make_raw_block(const json& entry) {
+    return ContentBlock{.type = "raw", .text = entry.dump(2)};
+}
+
 [[nodiscard]] inline SessionEntry parse_entry(const json& parsed) {
     auto type = extract_entry_type(parsed);
+    auto timestamp = extract_timestamp(parsed).value_or("");
     auto content = extract_content(parsed);
-    if (type == "unknown" && content.empty()) {
+    if (is_unmatched_record(type, content)) {
         type = "raw";
-        content.push_back(ContentBlock{.type = "raw", .text = parsed.dump(2)});
+        content.push_back(make_raw_block(parsed));
     }
-    return SessionEntry{
-        .type      = type,
-        .timestamp = extract_timestamp(parsed).value_or(""),
-        .content   = content,
-    };
+    return SessionEntry{.type = type, .timestamp = timestamp, .content = content};
 }
 
 [[nodiscard]] inline SessionEntry parse_jsonl_line(std::string_view line) {
