@@ -337,12 +337,26 @@ function renderRawTable(rawEntries, schema) {
     return html;
 }
 
+function mapEntries(m) {
+    if (m && typeof m.keys === 'function' && typeof m.get === 'function') {
+        const ks = m.keys();
+        const out = [];
+        const len = vecLen(ks);
+        for (let i = 0; i < len; i++) {
+            const k = vecGet(ks, i);
+            out.push([k, m.get(k)]);
+        }
+        return out;
+    }
+    return Object.entries(m || {});
+}
+
 function statsForLeaf(stats) {
     const parts = [];
     // Type breakdown
     const typeStrs = [];
-    if (stats.typeCounts) {
-        for (const k in stats.typeCounts) typeStrs.push(`${k}: ${stats.typeCounts[k]}`);
+    for (const [k, v] of mapEntries(stats.typeCounts)) {
+        typeStrs.push(`${escapeHtml(k)}: ${v}`);
     }
     if (typeStrs.length) parts.push(typeStrs.join(', '));
     // Numeric range

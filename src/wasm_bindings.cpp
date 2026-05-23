@@ -9,9 +9,15 @@
 //   bound as computed fields via .field("name", &fn).
 //
 //   std::optional<RawSchema> on Session likewise cannot be bound directly.
-//   Fallback applied: hasRawSchema / getRawSchema exported as free functions.
+//   Fallback applied: hasRawSchema / getRawSchema exported as free functions
+//   that take a `const Session&`. For this to actually work, Session must be
+//   bound as class_<> (not value_object<>): value_object serializes the JS
+//   object into a fresh C++ Session via the bound .field()s, and since
+//   raw_schema is unbound, the round-trip drops it — making hasRawSchema
+//   always return false. class_<> exposes the object as a handle, so the
+//   real C++ Session (with its populated optional) is what hasRawSchema sees.
 //
-//   ColumnNode uses class_<> (not value_object<>) because it is self-referential
+//   ColumnNode also uses class_<> because it is self-referential
 //   (contains std::vector<ColumnNode>); value_object semantics require a complete
 //   copyable value type without reference cycles, which recursive vectors violate
 //   in Emscripten's Embind.
@@ -52,6 +58,9 @@ EMSCRIPTEN_BINDINGS(session_parser) {
     register_vector<std::pair<std::string, int>>("VectorStringCount");
 
     register_map<std::string, int>("MapStringInt");
+    // MapStringInt.keys() returns std::vector<std::string> — must be registered
+    // or any JS-side iteration via .keys() throws "unbound types".
+    register_vector<std::string>("VectorString");
 
     // FieldStats: optional<double> fields exposed via getter/setter pairs
     // (defined in schema.hpp) because Emscripten value_object .field() requires
@@ -83,12 +92,12 @@ EMSCRIPTEN_BINDINGS(session_parser) {
         .field("columns", &RawSchema::columns)
         .field("recordCount", &RawSchema::record_count);
 
-    // Session: raw_schema is std::optional<RawSchema>; cannot bind directly.
-    // Exposed via hasRawSchema / getRawSchema free functions instead.
-    value_object<Session>("Session")
-        .field("title", &Session::title)
-        .field("entries", &Session::entries)
-        .field("errors", &Session::errors);
+    // Session uses class_<> so JS holds a handle (not a copy). This preserves
+    // the raw_schema optional across calls to hasRawSchema / getRawSchema.
+    class_<Session>("Session")
+        .property("title", &Session::title)
+        .property("entries", &Session::entries)
+        .property("errors", &Session::errors);
 
     function("hasRawSchema", &has_raw_schema);
     function("getRawSchema", &get_raw_schema);
