@@ -23,3 +23,18 @@ TEST_CASE("analyze_raw_schema captures top-level string field") {
     REQUIRE(schema.columns[0].stats.present_count == 1);
     REQUIRE(schema.columns[0].stats.type_counts["string"] == 1);
 }
+
+TEST_CASE("analyze_raw_schema distinguishes null from missing") {
+    std::vector<nlohmann::json> entries = {
+        nlohmann::json::parse(R"({"nr_kw":"A","typ":"gruntowa"})"),
+        nlohmann::json::parse(R"({"nr_kw":"B","typ":null})"),
+        nlohmann::json::parse(R"({"nr_kw":"C"})")  // typ missing
+    };
+
+    auto schema = analyze_raw_schema(entries);
+
+    auto& typ = schema.columns[1];
+    REQUIRE(typ.name == "typ");
+    REQUIRE(typ.stats.present_count == 2);  // missing in record 3
+    REQUIRE(typ.stats.null_count == 1);
+}
