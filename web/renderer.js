@@ -204,6 +204,22 @@ function extractCellValue(obj, path) {
     return cur;
 }
 
+function summarizeArrayCell(arr) {
+    if (!Array.isArray(arr) || arr.length === 0) return "";
+    const parts = arr.map(item => {
+        if (item === null || item === undefined) return "";
+        if (typeof item !== 'object') return String(item);
+        for (const key of Object.keys(item)) {
+            const v = item[key];
+            if (typeof v === 'string') return v;
+        }
+        return "";
+    }).filter(s => s !== "");
+    const joined = parts.join(", ");
+    if (joined.length <= 200) return joined;
+    return joined.slice(0, 200) + "...";
+}
+
 if (typeof module !== 'undefined') {
-    module.exports = { escapeHtml, formatTimestamp, entryClass, renderMarkdown, isJsonl, renderContentBlock, renderEntry, renderSession, extractCellValue };
+    module.exports = { escapeHtml, formatTimestamp, entryClass, renderMarkdown, isJsonl, renderContentBlock, renderEntry, renderSession, extractCellValue, summarizeArrayCell };
 }
