@@ -194,6 +194,70 @@ function isJsonl(text) {
     try { JSON.parse(firstLine); return true; } catch(e) { return false; }
 }
 
+function columnDepth(col) {
+    const children = col.children;
+    const len = children.size ? children.size() : children.length;
+    if (col.kind !== 'object' || len === 0) return 1;
+    let maxChild = 0;
+    for (let i = 0; i < len; i++) {
+        const child = children.get ? children.get(i) : children[i];
+        const d = columnDepth(child);
+        if (d > maxChild) maxChild = d;
+    }
+    return 1 + maxChild;
+}
+
+function leafCount(col) {
+    const children = col.children;
+    const len = children.size ? children.size() : children.length;
+    if (col.kind !== 'object' || len === 0) return 1;
+    let total = 0;
+    for (let i = 0; i < len; i++) {
+        const child = children.get ? children.get(i) : children[i];
+        total += leafCount(child);
+    }
+    return total;
+}
+
+function buildHeaderRows(columns) {
+    let maxDepth = 1;
+    for (const c of columns) {
+        const d = columnDepth(c);
+        if (d > maxDepth) maxDepth = d;
+    }
+
+    const rows = Array.from({length: maxDepth}, () => []);
+
+    function place(col, depth) {
+        if (col.kind === 'object') {
+            rows[depth].push({
+                name: col.name,
+                path: col.path,
+                kind: col.kind,
+                colspan: leafCount(col),
+                rowspan: 1
+            });
+            const children = col.children;
+            const len = children.size ? children.size() : children.length;
+            for (let i = 0; i < len; i++) {
+                const child = children.get ? children.get(i) : children[i];
+                place(child, depth + 1);
+            }
+        } else {
+            rows[depth].push({
+                name: col.name,
+                path: col.path,
+                kind: col.kind,
+                colspan: 1,
+                rowspan: maxDepth - depth
+            });
+        }
+    }
+
+    for (const c of columns) place(c, 0);
+    return rows;
+}
+
 function extractCellValue(obj, path) {
     const parts = path.split('.');
     let cur = obj;
@@ -221,5 +285,5 @@ function summarizeArrayCell(arr) {
 }
 
 if (typeof module !== 'undefined') {
-    module.exports = { escapeHtml, formatTimestamp, entryClass, renderMarkdown, isJsonl, renderContentBlock, renderEntry, renderSession, extractCellValue, summarizeArrayCell };
+    module.exports = { escapeHtml, formatTimestamp, entryClass, renderMarkdown, isJsonl, renderContentBlock, renderEntry, renderSession, extractCellValue, summarizeArrayCell, buildHeaderRows };
 }
