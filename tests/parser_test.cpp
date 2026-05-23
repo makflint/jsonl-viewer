@@ -156,12 +156,36 @@ TEST_CASE("Parse entry with string content does not throw") {
     REQUIRE(entry.content.empty());
 }
 
-TEST_CASE("Parse entry without type or message.role returns unknown") {
+TEST_CASE("Parse entry without type or message.role is rendered as raw record") {
     std::string line = R"({"foo":"bar"})";
 
     auto entry = parse_jsonl_line(line);
 
-    REQUIRE(entry.type == "unknown");
+    REQUIRE(entry.type == "raw");
+    REQUIRE(entry.content.size() == 1);
+    REQUIRE(entry.content[0].type == "raw");
+    REQUIRE(entry.content[0].text == "{\n  \"foo\": \"bar\"\n}");
+}
+
+TEST_CASE("Raw fallback preserves non-Claude-session domain fields") {
+    std::string line = R"({"nr_kw":"KA1K/00000001/9","typ":"gruntowa"})";
+
+    auto entry = parse_jsonl_line(line);
+
+    REQUIRE(entry.type == "raw");
+    REQUIRE(entry.content.size() == 1);
+    REQUIRE(entry.content[0].type == "raw");
+    REQUIRE(entry.content[0].text.find("\"nr_kw\": \"KA1K/00000001/9\"") != std::string::npos);
+    REQUIRE(entry.content[0].text.find("\"typ\": \"gruntowa\"") != std::string::npos);
+}
+
+TEST_CASE("Raw fallback does not trigger for known metadata types") {
+    std::string line = R"({"type":"queue-operation","operation":"enqueue"})";
+
+    auto entry = parse_jsonl_line(line);
+
+    REQUIRE(entry.type == "queue-operation");
+    REQUIRE(entry.content.empty());
 }
 
 TEST_CASE("Parse entry with no message key has empty content") {
@@ -197,7 +221,9 @@ TEST_CASE("Parse session handles entry with neither type nor message.role") {
     auto session = parse_session(jsonl);
 
     REQUIRE(session.size() == 1);
-    REQUIRE(session[0].type == "unknown");
+    REQUIRE(session[0].type == "raw");
+    REQUIRE(session[0].content.size() == 1);
+    REQUIRE(session[0].content[0].type == "raw");
 }
 
 TEST_CASE("Parse entry preserves unicode text") {
