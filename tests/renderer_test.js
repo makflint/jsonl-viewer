@@ -451,3 +451,41 @@ test('summarizeArrayCell truncates at ~200 chars with ellipsis', () => {
     assert(result.length <= 203, `result was ${result.length} chars: ${result}`);
     assert(result.endsWith("..."), "should end with ellipsis");
 });
+
+test('buildHeaderRows handles flat schema as one row', () => {
+    const { buildHeaderRows } = require('../web/renderer.js');
+    const cols = [
+        {name: "nr_kw", path: "nr_kw", kind: "leaf", children: vec([])},
+        {name: "typ", path: "typ", kind: "leaf", children: vec([])}
+    ];
+    const rows = buildHeaderRows(cols);
+    assert.strictEqual(rows.length, 1);
+    assert.strictEqual(rows[0].length, 2);
+    assert.strictEqual(rows[0][0].name, "nr_kw");
+    assert.strictEqual(rows[0][0].colspan, 1);
+    assert.strictEqual(rows[0][0].rowspan, 1);
+});
+
+test('buildHeaderRows produces two rows for one nested object', () => {
+    const { buildHeaderRows } = require('../web/renderer.js');
+    const cols = [
+        {name: "nr_kw", path: "nr_kw", kind: "leaf", children: vec([])},
+        {name: "dzial_1o", path: "dzial_1o", kind: "object", children: vec([
+            {name: "pow", path: "dzial_1o.pow", kind: "leaf", children: vec([])},
+            {name: "sposob", path: "dzial_1o.sposob", kind: "leaf", children: vec([])}
+        ])}
+    ];
+    const rows = buildHeaderRows(cols);
+    assert.strictEqual(rows.length, 2);
+    // Row 1: nr_kw (rowspan=2), dzial_1o (colspan=2)
+    assert.strictEqual(rows[0][0].name, "nr_kw");
+    assert.strictEqual(rows[0][0].rowspan, 2);
+    assert.strictEqual(rows[0][0].colspan, 1);
+    assert.strictEqual(rows[0][1].name, "dzial_1o");
+    assert.strictEqual(rows[0][1].colspan, 2);
+    assert.strictEqual(rows[0][1].rowspan, 1);
+    // Row 2: pow, sposob
+    assert.strictEqual(rows[1].length, 2);
+    assert.strictEqual(rows[1][0].name, "pow");
+    assert.strictEqual(rows[1][1].name, "sposob");
+});
