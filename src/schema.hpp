@@ -106,6 +106,8 @@ inline void finalize_column(ColumnNode& col) {
     }
     col._string_counts.clear();
     col._child_index.clear();
+    col._array_length_sum = 0.0;
+    col._array_length_count = 0;
     for (auto& child : col.children) finalize_column(child);
 }
 
