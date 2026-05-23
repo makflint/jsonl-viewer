@@ -39,6 +39,17 @@ struct RawSchema {
     return "unknown";
 }
 
+[[nodiscard]] inline std::vector<std::pair<std::string, int>> top_n_by_frequency(
+    const std::map<std::string, int>& counts, size_t n) {
+    std::vector<std::pair<std::string, int>> sorted(counts.begin(), counts.end());
+    std::sort(sorted.begin(), sorted.end(), [](const auto& a, const auto& b) {
+        if (a.second != b.second) return a.second > b.second;
+        return a.first < b.first;
+    });
+    if (sorted.size() > n) sorted.resize(n);
+    return sorted;
+}
+
 [[nodiscard]] inline RawSchema analyze_raw_schema(const std::vector<nlohmann::json>& entries) {
     RawSchema schema;
     schema.record_count = static_cast<int>(entries.size());
@@ -74,13 +85,7 @@ struct RawSchema {
 
     // Materialize top-5 per column
     for (size_t i = 0; i < schema.columns.size(); ++i) {
-        std::vector<std::pair<std::string, int>> sorted(string_counts[i].begin(), string_counts[i].end());
-        std::sort(sorted.begin(), sorted.end(), [](const auto& a, const auto& b) {
-            if (a.second != b.second) return a.second > b.second;
-            return a.first < b.first;
-        });
-        if (sorted.size() > 5) sorted.resize(5);
-        schema.columns[i].stats.top_values = std::move(sorted);
+        schema.columns[i].stats.top_values = top_n_by_frequency(string_counts[i], 5);
     }
 
     return schema;
