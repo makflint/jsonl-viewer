@@ -12,7 +12,7 @@ function makeBlock(overrides = {}) {
 }
 
 function makeEntry(overrides = {}) {
-    return { type: 'user', timestamp: '', content: vec([]), ...overrides };
+    return { type: 'user', timestamp: '', content: vec([]), lineNumber: 0, ...overrides };
 }
 
 function makeSession(overrides = {}) {
@@ -267,6 +267,30 @@ test('renderEntry shows raw entries by default (not metadata-hidden)', () => {
 
     assert(html.includes('class="entry raw"'), 'should use raw class');
     assert(!html.includes('hidden'), 'raw entry should be visible by default');
+});
+
+test('renderEntry shows source line number in raw header', () => {
+    const entry = makeEntry({
+        type: 'raw',
+        lineNumber: 42,
+        content: vec([makeBlock({ type: 'raw', text: '{"foo":"bar"}' })])
+    });
+
+    const html = renderEntry(entry);
+
+    assert(html.includes('line 42'), 'raw header should show "line 42"');
+});
+
+test('renderEntry omits line number when zero', () => {
+    const entry = makeEntry({
+        type: 'raw',
+        lineNumber: 0,
+        content: vec([makeBlock({ type: 'raw', text: '{}' })])
+    });
+
+    const html = renderEntry(entry);
+
+    assert(!html.includes('line 0'), 'should not show "line 0" placeholder');
 });
 
 test('renderEntry classifies unknown type as metadata', () => {
