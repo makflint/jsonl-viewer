@@ -19,7 +19,8 @@ EMSCRIPTEN_BINDINGS(session_parser) {
     value_object<SessionEntry>("SessionEntry")
         .field("type", &SessionEntry::type)
         .field("timestamp", &SessionEntry::timestamp)
-        .field("content", &SessionEntry::content);
+        .field("content", &SessionEntry::content)
+        .field("lineNumber", &SessionEntry::line_number);
 
     register_vector<ContentBlock>("VectorContentBlock");
     register_vector<SessionEntry>("VectorSessionEntry");

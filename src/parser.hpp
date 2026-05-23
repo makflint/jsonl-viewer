@@ -22,6 +22,7 @@ struct SessionEntry {
     std::string type;
     std::string timestamp;
     std::vector<ContentBlock> content;
+    int line_number = 0;
 };
 
 struct ParseError {
@@ -141,7 +142,9 @@ struct Session {
             session.title = parsed->value("aiTitle", "");
             continue;
         }
-        session.entries.push_back(parse_entry(*parsed));
+        auto entry = parse_entry(*parsed);
+        entry.line_number = line_number;
+        session.entries.push_back(std::move(entry));
     }
     return session;
 }
