@@ -8,6 +8,8 @@ Browser-based pretty viewer for Claude Code JSONL session files.
 
 Drop `examples/sample-records.jsonl` or `examples/claude-session.jsonl` into either to see both render paths.
 
+The viewer detects raw (non-Claude-session) JSONL records and offers a **Table view** with grouped headers and schema statistics, in addition to the JSON view.
+
 ## Tech Stack
 
 - **C++23** — core parser logic
