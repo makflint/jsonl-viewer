@@ -323,6 +323,50 @@
             });
         });
 
+        let hiddenColumns = new Set();
+        let contextMenu = null;
+
+        function closeContextMenu() {
+            if (contextMenu) { contextMenu.remove(); contextMenu = null; }
+        }
+
+        function applyColumnHiding() {
+            const table = document.querySelector('.raw-table');
+            if (!table) return;
+            table.querySelectorAll('th[data-path], td[data-path]').forEach(el => {
+                const path = el.getAttribute('data-path');
+                const hide = Array.from(hiddenColumns).some(h => path === h || path.startsWith(h + '.'));
+                el.classList.toggle('col-hidden', hide);
+            });
+        }
+
+        document.getElementById('outputTable').addEventListener('contextmenu', e => {
+            const th = e.target.closest('.raw-table th[data-path]');
+            if (!th) return;
+            e.preventDefault();
+            closeContextMenu();
+            const path = th.getAttribute('data-path');
+            contextMenu = document.createElement('div');
+            contextMenu.className = 'col-context-menu';
+            contextMenu.style.left = e.pageX + 'px';
+            contextMenu.style.top = e.pageY + 'px';
+            contextMenu.innerHTML = `
+                <button data-action="hide">Hide column</button>
+                <button data-action="show-all">Show all columns</button>
+            `;
+            contextMenu.addEventListener('click', ev => {
+                const action = ev.target.dataset.action;
+                if (action === 'hide') { hiddenColumns.add(path); }
+                else if (action === 'show-all') { hiddenColumns.clear(); }
+                applyColumnHiding();
+                closeContextMenu();
+            });
+            document.body.appendChild(contextMenu);
+        });
+
+        document.addEventListener('click', closeContextMenu);
+        document.addEventListener('scroll', closeContextMenu, true);
+
         let currentSession = null;
 
         function displaySession(jsonl) {
@@ -330,6 +374,7 @@
                 document.getElementById('outputJson').innerHTML = '<div class="errors">File does not appear to be JSONL — first line is not valid JSON.</div>';
                 return;
             }
+            hiddenColumns.clear();
             const session = parserModule.parseSession(jsonl);
             currentSession = session;
             document.getElementById('outputJson').innerHTML = renderSession(session);
