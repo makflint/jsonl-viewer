@@ -53,3 +53,21 @@ TEST_CASE("analyze_raw_schema captures numeric min and max") {
     REQUIRE(*schema.columns[0].stats.numeric_min == 5.0);
     REQUIRE(*schema.columns[0].stats.numeric_max == 3097.0);
 }
+
+TEST_CASE("analyze_raw_schema collects top string values sorted by frequency") {
+    std::vector<nlohmann::json> entries;
+    for (int i = 0; i < 5; ++i) entries.push_back(nlohmann::json::parse(R"({"typ":"gruntowa"})"));
+    for (int i = 0; i < 2; ++i) entries.push_back(nlohmann::json::parse(R"({"typ":"lokalowa"})"));
+    entries.push_back(nlohmann::json::parse(R"({"typ":"inny"})"));
+
+    auto schema = analyze_raw_schema(entries);
+
+    const auto& top = schema.columns[0].stats.top_values;
+    REQUIRE(top.size() == 3);
+    REQUIRE(top[0].first == "gruntowa");
+    REQUIRE(top[0].second == 5);
+    REQUIRE(top[1].first == "lokalowa");
+    REQUIRE(top[1].second == 2);
+    REQUIRE(top[2].first == "inny");
+    REQUIRE(top[2].second == 1);
+}
