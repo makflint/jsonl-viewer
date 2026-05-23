@@ -38,3 +38,18 @@ TEST_CASE("analyze_raw_schema distinguishes null from missing") {
     REQUIRE(typ.stats.present_count == 2);  // missing in record 3
     REQUIRE(typ.stats.null_count == 1);
 }
+
+TEST_CASE("analyze_raw_schema captures numeric min and max") {
+    std::vector<nlohmann::json> entries = {
+        nlohmann::json::parse(R"({"pow":634.0})"),
+        nlohmann::json::parse(R"({"pow":3097.0})"),
+        nlohmann::json::parse(R"({"pow":5.0})"),
+        nlohmann::json::parse(R"({"pow":null})")
+    };
+
+    auto schema = analyze_raw_schema(entries);
+
+    REQUIRE(schema.columns[0].stats.numeric_min.has_value());
+    REQUIRE(*schema.columns[0].stats.numeric_min == 5.0);
+    REQUIRE(*schema.columns[0].stats.numeric_max == 3097.0);
+}
