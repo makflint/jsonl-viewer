@@ -101,10 +101,16 @@ struct Session {
 }
 
 [[nodiscard]] inline SessionEntry parse_entry(const json& parsed) {
+    auto type = extract_entry_type(parsed);
+    auto content = extract_content(parsed);
+    if (type == "unknown" && content.empty()) {
+        type = "raw";
+        content.push_back(ContentBlock{.type = "raw", .text = parsed.dump(2)});
+    }
     return SessionEntry{
-        .type      = extract_entry_type(parsed),
+        .type      = type,
         .timestamp = extract_timestamp(parsed).value_or(""),
-        .content   = extract_content(parsed),
+        .content   = content,
     };
 }
 
