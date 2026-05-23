@@ -6,6 +6,9 @@ function escapeHtml(text) {
         .replace(/"/g, '&quot;');
 }
 
+function vecLen(v) { return v.size ? v.size() : v.length; }
+function vecGet(v, i) { return v.get ? v.get(i) : v[i]; }
+
 function formatTimestamp(iso) {
     const date = new Date(iso);
     if (isNaN(date)) return iso;
@@ -195,26 +198,22 @@ function isJsonl(text) {
 }
 
 function columnDepth(col) {
-    const children = col.children;
-    const len = children.size ? children.size() : children.length;
+    const len = vecLen(col.children);
     if (col.kind !== 'object' || len === 0) return 1;
     let maxChild = 0;
     for (let i = 0; i < len; i++) {
-        const child = children.get ? children.get(i) : children[i];
-        const d = columnDepth(child);
+        const d = columnDepth(vecGet(col.children, i));
         if (d > maxChild) maxChild = d;
     }
     return 1 + maxChild;
 }
 
 function leafCount(col) {
-    const children = col.children;
-    const len = children.size ? children.size() : children.length;
+    const len = vecLen(col.children);
     if (col.kind !== 'object' || len === 0) return 1;
     let total = 0;
     for (let i = 0; i < len; i++) {
-        const child = children.get ? children.get(i) : children[i];
-        total += leafCount(child);
+        total += leafCount(vecGet(col.children, i));
     }
     return total;
 }
@@ -237,11 +236,9 @@ function buildHeaderRows(columns) {
                 colspan: leafCount(col),
                 rowspan: 1
             });
-            const children = col.children;
-            const len = children.size ? children.size() : children.length;
+            const len = vecLen(col.children);
             for (let i = 0; i < len; i++) {
-                const child = children.get ? children.get(i) : children[i];
-                place(child, depth + 1);
+                place(vecGet(col.children, i), depth + 1);
             }
         } else {
             rows[depth].push({
