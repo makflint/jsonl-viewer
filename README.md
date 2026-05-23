@@ -2,7 +2,11 @@
 
 Browser-based pretty viewer for Claude Code JSONL session files.
 
-**Live demo:** https://makflint.github.io/jsonl-viewer/
+**Live demos:**
+- https://makflint.github.io/jsonl-viewer/ — primary (self-hosted on self-hosted VPS, see [Deployment](#deployment))
+- https://makflint.github.io/jsonl-viewer/ — mirror, auto-updated by the GitHub Actions workflow on push to `master`
+
+Drop `examples/sample-records.jsonl` or `examples/claude-session.jsonl` into either to see both render paths.
 
 ## Tech Stack
 
@@ -51,3 +55,53 @@ Parse and render Claude Code `.jsonl` session files in a browser with:
 - File upload / drag-and-drop of `.jsonl` files
 - Fully client-side (no server needed)
 - Deployed to GitHub Pages via Actions workflow
+
+## Deployment
+
+The site is shipped two ways. Both serve the contents of `web/` as static files — there is no backend.
+
+### Primary — self-hosted VPS (`makflint.github.io`)
+
+Manual rsync from your dev machine after rebuilding the WASM. Traefik on the VPS terminates TLS and routes `Host=makflint.github.io` to a docker container `jsonl-pretty` (`nginx:alpine`) that bind-mounts `/srv/app` → `/usr/share/nginx/html`. Push files into that directory and they are live immediately — no container restart needed.
+
+```bash
+# 1. Rebuild WASM if parser.hpp / wasm_bindings.cpp changed
+EMSDK=/opt/emsdk cmake --build build_wasm
+
+# 2. Push the four web assets to the docroot
+rsync -av --checksum \
+    web/index.html web/parser.js web/parser.wasm web/renderer.js \
+    user@server:/srv/app/
+
+# 3. Smoke-check
+curl -s -o /dev/null -w "HTTP %{http_code}\n" https://makflint.github.io/jsonl-viewer/
+```
+
+The docroot files are owned by `ubuntu` (mode 644) so no `sudo` is needed.
+
+Traefik routing is configured via container labels (set when the container was created); they survive `docker restart` but not `docker rm`. If the container is ever recreated, use:
+
+```bash
+docker run -d --name jsonl-pretty \
+    -v /srv/app:/usr/share/nginx/html \
+    --label traefik.enable=true \
+    --label "traefik.http.routers.jsonl-pretty.rule=Host(\`makflint.github.io\`)" \
+    --label traefik.http.routers.jsonl-pretty.entrypoints=websecure \
+    --label traefik.http.routers.jsonl-pretty.tls.certresolver=letsencrypt \
+    --network <traefik-network> \
+    nginx:alpine
+```
+
+### Mirror — GitHub Pages
+
+`.github/workflows/pages.yml` uploads `web/` as the Pages artifact on every push to `master`. No manual steps — the workflow handles checkout, configure-pages, upload, and deploy.
+
+```bash
+git push origin master
+# → Actions workflow "Deploy to GitHub Pages" runs in ~1 min
+# → https://makflint.github.io/jsonl-viewer/ updated
+```
+
+### Why both?
+
+The self-hosted deploy gives a vanity URL on infrastructure already provisioned for other projects and decouples the live site from GitHub's availability. GitHub Pages stays as an automatic mirror so the public-facing demo is never older than `master`.
