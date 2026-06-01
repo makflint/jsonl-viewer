@@ -318,3 +318,65 @@ TEST_CASE("parse_session handles pretty-printed JSON object") {
     REQUIRE(session[0].content[0].type == "raw");
     REQUIRE(session[0].content[0].text.find("\"name\": \"Alice\"") != std::string::npos);
 }
+
+TEST_CASE("parse_session handles pretty-printed JSON array of objects") {
+    std::string input = "[\n  {\"name\": \"Alice\"},\n  {\"name\": \"Bob\"},\n  {\"name\": \"Carol\"}\n]";
+
+    auto session = parse_session(input);
+
+    REQUIRE(session.size() == 3);
+    REQUIRE(session.errors.empty());
+    REQUIRE(session[0].type == "raw");
+    REQUIRE(session[0].content[0].text.find("\"name\": \"Alice\"") != std::string::npos);
+    REQUIRE(session[1].content[0].text.find("\"name\": \"Bob\"") != std::string::npos);
+    REQUIRE(session[2].content[0].text.find("\"name\": \"Carol\"") != std::string::npos);
+}
+
+TEST_CASE("parse_session generates schema for JSON array") {
+    std::string input = "[\n  {\"nr_kw\": \"A\", \"typ\": \"gruntowa\"},\n  {\"nr_kw\": \"B\", \"typ\": \"lokalowa\"}\n]";
+
+    auto session = parse_session(input);
+
+    REQUIRE(session.raw_schema.has_value());
+    REQUIRE(session.raw_schema->record_count == 2);
+    REQUIRE(session.raw_schema->columns.size() == 2);
+    REQUIRE(session.raw_schema->columns[0].name == "nr_kw");
+}
+
+TEST_CASE("parse_session assigns 1-based index for JSON array entries") {
+    std::string input = R"([{"a":1},{"a":2},{"a":3}])";
+
+    auto session = parse_session(input);
+
+    REQUIRE(session[0].line_number == 1);
+    REQUIRE(session[1].line_number == 2);
+    REQUIRE(session[2].line_number == 3);
+}
+
+TEST_CASE("parse_session handles empty JSON array") {
+    auto session = parse_session("[]");
+
+    REQUIRE(session.size() == 0);
+    REQUIRE(session.errors.empty());
+}
+
+TEST_CASE("parse_session handles JSON array with Claude session entries") {
+    std::string input = R"([{"type":"user","message":{"role":"user","content":[{"type":"text","text":"hello"}]}},{"message":{"role":"assistant","content":[{"type":"text","text":"hi"}]}}])";
+
+    auto session = parse_session(input);
+
+    REQUIRE(session.size() == 2);
+    REQUIRE(session[0].type == "user");
+    REQUIRE(session[0].content[0].text == "hello");
+    REQUIRE(session[1].type == "assistant");
+    REQUIRE(session[1].content[0].text == "hi");
+}
+
+TEST_CASE("parse_session generates schema for single JSON object") {
+    std::string input = R"({"name":"Alice","age":30})";
+
+    auto session = parse_session(input);
+
+    REQUIRE(session.raw_schema.has_value());
+    REQUIRE(session.raw_schema->record_count == 1);
+}
