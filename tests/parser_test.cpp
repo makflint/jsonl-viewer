@@ -305,3 +305,16 @@ TEST_CASE("parse_session leaves raw_schema empty when no raw entries") {
 
     REQUIRE_FALSE(session.raw_schema.has_value());
 }
+
+TEST_CASE("parse_session handles pretty-printed JSON object") {
+    std::string input = "{\n  \"name\": \"Alice\",\n  \"age\": 30\n}";
+
+    auto session = parse_session(input);
+
+    REQUIRE(session.size() == 1);
+    REQUIRE(session.errors.empty());
+    REQUIRE(session[0].type == "raw");
+    REQUIRE(session[0].content.size() == 1);
+    REQUIRE(session[0].content[0].type == "raw");
+    REQUIRE(session[0].content[0].text.find("\"name\": \"Alice\"") != std::string::npos);
+}
