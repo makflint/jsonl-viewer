@@ -194,7 +194,8 @@ function renderSession(session) {
 function isJsonl(text) {
     const firstLine = text.split('\n').find(l => l.trim().length > 0);
     if (!firstLine) return false;
-    try { JSON.parse(firstLine); return true; } catch(e) { return false; }
+    try { JSON.parse(firstLine); return true; } catch(e) { /* not single-line */ }
+    try { JSON.parse(text); return true; } catch(e) { return false; }
 }
 
 function columnDepth(col) {
