@@ -407,6 +407,14 @@ test('isJsonl ignores leading empty lines', () => {
     assert.strictEqual(isJsonl('\n\n{"type":"user"}'), true);
 });
 
+test('isJsonl returns true for pretty-printed JSON object', () => {
+    assert.strictEqual(isJsonl('{\n  "name": "Alice"\n}'), true);
+});
+
+test('isJsonl returns true for pretty-printed JSON array', () => {
+    assert.strictEqual(isJsonl('[\n  {"a": 1},\n  {"b": 2}\n]'), true);
+});
+
 test('extractCellValue returns top-level field', () => {
     const { extractCellValue } = require('../web/renderer.js');
     assert.strictEqual(extractCellValue({nr_kw: "ABC"}, "nr_kw"), "ABC");
