@@ -126,7 +126,40 @@ struct Session {
     return parse_entry(json::parse(line));
 }
 
+[[nodiscard]] inline std::optional<Session> try_parse_json(const std::string& input) {
+    auto parsed = json::parse(input, nullptr, false);
+    if (parsed.is_discarded()) return std::nullopt;
+
+    Session session;
+    std::vector<json> raw_entries_json;
+    auto process = [&](const json& item, int index) {
+        auto type = item.value("type", std::string{});
+        if (type == "ai-title") {
+            session.title = item.value("aiTitle", "");
+            return;
+        }
+        auto entry = parse_entry(item);
+        entry.line_number = index;
+        if (entry.type == "raw") raw_entries_json.push_back(item);
+        session.entries.push_back(std::move(entry));
+    };
+
+    if (parsed.is_array()) {
+        int index = 0;
+        for (const auto& item : parsed) process(item, ++index);
+    } else {
+        process(parsed, 1);
+    }
+
+    if (!raw_entries_json.empty())
+        session.raw_schema = analyze_raw_schema(raw_entries_json);
+    return session;
+}
+
 [[nodiscard]] inline Session parse_session(const std::string& jsonl) {
+    if (auto json_session = try_parse_json(jsonl))
+        return *json_session;
+
     Session session;
     std::vector<json> raw_entries_json;
     std::istringstream stream(jsonl);
