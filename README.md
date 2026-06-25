@@ -117,3 +117,5 @@ Built test-first. The TDD, Clean Code, and commit conventions used throughout li
 
 MIT — see [LICENSE](LICENSE). Vendored dependencies in `third_party/` keep their own licenses
 (Catch2 under BSL-1.0, nlohmann/json under MIT).
+
+A large part of this project was written with [Claude Code](https://claude.com/claude-code), Anthropic's AI coding assistant.
