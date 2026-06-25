@@ -5,6 +5,7 @@ Browser-based pretty viewer for **JSONL and JSON** files. The parsing core is wr
 is never uploaded and never leaves the browser.
 
 [![Live demo](https://img.shields.io/badge/demo-live-40a02b?logo=githubpages&logoColor=white)](https://makflint.github.io/jsonl-viewer/)
+[![CI](https://github.com/makflint/jsonl-viewer/actions/workflows/ci.yml/badge.svg)](https://github.com/makflint/jsonl-viewer/actions/workflows/ci.yml)
 [![Deploy to GitHub Pages](https://github.com/makflint/jsonl-viewer/actions/workflows/pages.yml/badge.svg)](https://github.com/makflint/jsonl-viewer/actions/workflows/pages.yml)
 ![C++23](https://img.shields.io/badge/C%2B%2B-23-00599C?logo=cplusplus&logoColor=white)
 ![WebAssembly](https://img.shields.io/badge/WebAssembly-Emscripten-654FF0?logo=webassembly&logoColor=white)
@@ -85,6 +86,10 @@ cmake -B build && cmake --build build && ./build/tests
 
 # JS renderer tests
 node tests/renderer_test.js
+
+# WASM freshness/smoke test — loads the committed web/parser.js and checks the
+# parser still behaves correctly; fails if web/parser.* is stale vs the C++ core
+node tests/wasm_test.js
 
 # Rebuild the WASM (only if you changed the C++ core; requires Emscripten + Python 3.10+)
 # Point EMSDK at your emsdk root, e.g. export EMSDK=/path/to/emsdk

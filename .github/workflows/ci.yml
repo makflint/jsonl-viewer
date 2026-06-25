@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and run C++ tests
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+          ./build/tests
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run JS renderer tests
+        run: node tests/renderer_test.js
+
+      # The .wasm binary is not byte-reproducible across builds, so freshness is
+      # checked behaviourally: this loads the committed web/parser.js and asserts
+      # the parser still behaves correctly across the WASM boundary. A web/parser.*
+      # left stale after a src/*.hpp change fails here.
+      - name: Verify committed WASM is fresh
+        run: node tests/wasm_test.js
