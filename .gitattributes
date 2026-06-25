@@ -1,0 +1,6 @@
+# Emscripten output — machine-generated, not hand-written
+web/parser.js     linguist-generated=true
+web/parser.wasm   linguist-generated=true
+
+# Bundled third-party libraries (Catch2, nlohmann/json)
+third_party/**    linguist-vendored=true
