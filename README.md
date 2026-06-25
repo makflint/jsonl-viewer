@@ -4,18 +4,34 @@ Browser-based pretty viewer for **JSONL and JSON** files. The parsing core is wr
 **C++23** and compiled to **WebAssembly**, so everything runs 100% client-side — your file
 is never uploaded and never leaves the browser.
 
-**▶ Live demo: https://makflint.github.io/jsonl-viewer/**
+[![Live demo](https://img.shields.io/badge/demo-live-40a02b?logo=githubpages&logoColor=white)](https://makflint.github.io/jsonl-viewer/)
+[![Deploy to GitHub Pages](https://github.com/makflint/jsonl-viewer/actions/workflows/pages.yml/badge.svg)](https://github.com/makflint/jsonl-viewer/actions/workflows/pages.yml)
+![C++23](https://img.shields.io/badge/C%2B%2B-23-00599C?logo=cplusplus&logoColor=white)
+![WebAssembly](https://img.shields.io/badge/WebAssembly-Emscripten-654FF0?logo=webassembly&logoColor=white)
 
-Drop a `.jsonl` / `.json` file (or one of the bundled files in [`examples/`](examples/)) and the
-viewer picks one of two render paths automatically:
+**▶ Live demo: https://makflint.github.io/jsonl-viewer/** — drop a file, or click a *Load sample* button.
 
-- **Claude Code session** → a readable message timeline (user / assistant / tool calls) with
-  Markdown, collapsible *thinking* blocks, and collapsible tool-call details.
-  Try [`examples/claude-session.jsonl`](examples/claude-session.jsonl).
-- **Any other JSONL/JSON** → records with no session schema fall back to pretty-printed rows,
-  plus a **Table view** with grouped headers and a **Schema** tab showing per-field presence,
-  types, numeric ranges, array sizes, and top values.
-  Try [`examples/products.jsonl`](examples/products.jsonl).
+![A Claude Code session rendered as a readable timeline](docs/demo-session.png)
+
+## Two render paths
+
+The viewer parses the input and picks a presentation automatically — no configuration.
+
+### Claude Code session → readable timeline
+
+`user` / `assistant` / tool calls become a message timeline with Markdown, collapsible
+*thinking* blocks, and tool-call details whose results nest under the call (shown above).
+Metadata entries are hidden behind a toggle. Try **Load Claude session** on the live demo.
+
+### Any other JSONL / JSON → Table + Schema
+
+Records that don't match the session shape fall back to pretty-printed rows — **plus** a
+**Table view** with grouped headers for nested objects, and a **Schema** tab with per-field
+presence, types, numeric ranges, array sizes, and top values. Try **Load sample records**.
+
+![Table view with grouped headers for nested fields](docs/demo-table.png)
+
+![Schema statistics: presence, types, ranges, top values](docs/demo-schema.png)
 
 ## Features
 
@@ -80,8 +96,9 @@ cd web && python3 -m http.server 8080
 ## Deployment
 
 The whole app is static — there is no backend. [`.github/workflows/pages.yml`](.github/workflows/pages.yml)
-publishes the contents of `web/` to GitHub Pages on every push to `main`; GitHub serves `.wasm`
-with the correct `application/wasm` type, so it works out of the box.
+publishes the contents of `web/` (plus the bundled `examples/` as `samples/`) to GitHub Pages on
+every push to `main`; GitHub serves `.wasm` with the correct `application/wasm` type, so it works
+out of the box.
 
 ```bash
 git push origin main

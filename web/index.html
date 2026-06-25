@@ -248,10 +248,26 @@
             cursor: pointer;
         }
         .col-context-menu button:hover { background: #45475a; }
+        .subtitle { color: #a6adc8; font-size: 0.95em; margin: -8px 0 18px; line-height: 1.5; }
+        .subtitle .accent { color: #94e2d5; }
+        .samples { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+        .sample-btn {
+            background: #313244; color: #cdd6f4;
+            border: 1px solid #585b70; border-radius: 6px;
+            padding: 8px 14px; cursor: pointer; font-size: 0.9em;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .sample-btn:hover { border-color: #cba6f7; background: #45475a; }
+        .sample-btn .glyph { color: #a6e3a1; margin-right: 6px; }
     </style>
 </head>
 <body>
     <h1>JSONL Viewer</h1>
+    <p class="subtitle">JSONL / JSON pretty viewer · <span class="accent">C++23 → WebAssembly</span> · runs 100% in your browser — nothing is uploaded.</p>
+    <div class="samples">
+        <button class="sample-btn" data-sample="samples/claude-session.jsonl"><span class="glyph">▶</span>Load Claude session</button>
+        <button class="sample-btn" data-sample="samples/products.jsonl"><span class="glyph">▶</span>Load sample records</button>
+    </div>
     <div class="drop-zone" id="dropZone">
         <p>Drop a <strong>.jsonl</strong> or <strong>.json</strong> file here, or click to browse</p>
         <input type="file" id="fileInput" accept=".jsonl,.json">
@@ -277,7 +293,7 @@
         const fileInput = document.getElementById('fileInput');
         let parserModule = null;
 
-        ParserModule().then(mod => { parserModule = mod; }).catch(() => {
+        const moduleReady = ParserModule().then(mod => { parserModule = mod; }).catch(() => {
             document.getElementById('outputJson').innerHTML = '<div class="errors">Failed to load WebAssembly parser module.</div>';
         });
 
@@ -293,6 +309,22 @@
             handleFile(e.dataTransfer.files[0]);
         });
         fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+
+        document.querySelectorAll('.sample-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                try {
+                    const res = await fetch(btn.dataset.sample);
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const text = await res.text();
+                    await moduleReady;
+                    if (parserModule) displaySession(text);
+                } catch (e) {
+                    document.getElementById('outputJson').innerHTML =
+                        '<div class="errors">Could not load sample (' + escapeHtml(String(e.message)) +
+                        '). The sample buttons work on the live demo.</div>';
+                }
+            });
+        });
 
         function handleFile(file) {
             if (!file || !parserModule) return;

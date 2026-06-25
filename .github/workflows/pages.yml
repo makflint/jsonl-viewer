@@ -21,6 +21,10 @@ jobs:
       - uses: actions/configure-pages@v5
         with:
           enablement: true
+      - name: Bundle example files into the site (so "Load sample" works)
+        run: |
+          mkdir -p web/samples
+          cp examples/*.jsonl web/samples/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web
