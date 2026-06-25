@@ -1,109 +1,94 @@
-# Claude Code Session Pretty Print
+# JSONL Viewer
 
-Browser-based pretty viewer for Claude Code JSONL session files.
+Browser-based pretty viewer for **JSONL and JSON** files. The parsing core is written in
+**C++23** and compiled to **WebAssembly**, so everything runs 100% client-side — your file
+is never uploaded and never leaves the browser.
 
-**Live demos:**
-- https://makflint.github.io/jsonl-viewer/ — primary (self-hosted on self-hosted VPS, see [Deployment](#deployment))
-- https://makflint.github.io/jsonl-viewer/ — mirror, auto-updated by the GitHub Actions workflow on push to `master`
+**▶ Live demo: https://makflint.github.io/jsonl-viewer/**
 
-Drop `examples/sample-records.jsonl` or `examples/claude-session.jsonl` into either to see both render paths.
+Drop a `.jsonl` / `.json` file (or one of the bundled files in [`examples/`](examples/)) and the
+viewer picks one of two render paths automatically:
 
-The viewer detects raw (non-Claude-session) JSONL records and offers a **Table view** with grouped headers and schema statistics, in addition to the JSON view.
+- **Claude Code session** → a readable message timeline (user / assistant / tool calls) with
+  Markdown, collapsible *thinking* blocks, and collapsible tool-call details.
+  Try [`examples/claude-session.jsonl`](examples/claude-session.jsonl).
+- **Any other JSONL/JSON** → records with no session schema fall back to pretty-printed rows,
+  plus a **Table view** with grouped headers and a **Schema** tab showing per-field presence,
+  types, numeric ranges, array sizes, and top values.
+  Try [`examples/products.jsonl`](examples/products.jsonl).
 
-## Tech Stack
+## Features
 
-- **C++23** — core parser logic
-- **Emscripten** — compile to WebAssembly for browser
-- **marked.js** — Markdown rendering in assistant messages
-- **Catch2** — test framework (amalgamated, in `third_party/`)
-- **CMake** — build system (single `CMakeLists.txt` with two configurations: native for TDD, Emscripten for WASM)
+- Message timeline: user, assistant, tool calls, tool results
+- Markdown rendering in assistant messages (sanitised with DOMPurify)
+- Collapsible *thinking* blocks
+- Collapsible tool-call details with copyable commands; results nested under their call
+- Metadata entries hidden by default (one-click toggle)
+- Table + Schema views for arbitrary JSONL/JSON, with right-click column hide
+- Syntax highlighting (highlight.js, Catppuccin theme)
+- File picker **and** drag-and-drop
+- Fully client-side — no backend, no upload
 
-## Build & Test Commands
+## How it works
 
-The same `CMakeLists.txt` serves both builds. When invoked via `emcmake`, it detects Emscripten and builds the WASM target. Otherwise it builds the native Catch2 test runner.
-
-```bash
-# Native build (for TDD)
-mkdir -p build && cd build && cmake .. && make
-
-# Run C++ tests
-./build/tests
-
-# Run JS renderer tests
-node tests/renderer_test.js
-
-# WASM build (requires Emscripten + Python 3.10+)
-# Set EMSDK to your emsdk root, e.g.: export EMSDK=/opt/emsdk
-# First time only — cmake/emscripten_toolchain.cmake auto-locates Python 3.10+
-cmake -B build_wasm -DCMAKE_TOOLCHAIN_FILE=cmake/emscripten_toolchain.cmake .
-# Subsequent builds
-make -C build_wasm
-# Output: web/parser.js + web/parser.wasm
-
-# Run the viewer locally
-cd web && python3 -m http.server 8080
-# Open http://localhost:8080
+```
+.jsonl / .json ──▶ C++23 parser (WASM) ──▶ Session model ──▶ JS renderer ──▶ DOM
+                   src/parser.hpp                            web/renderer.js
+                   src/schema.hpp
 ```
 
-## Project Goal
+The C++ core ([`src/parser.hpp`](src/parser.hpp), [`src/schema.hpp`](src/schema.hpp)) parses each
+record and analyses the schema; [`src/wasm_bindings.cpp`](src/wasm_bindings.cpp) exposes it to the
+page via Emscripten. The renderer ([`web/renderer.js`](web/renderer.js)) is plain JavaScript that
+turns the parsed model into HTML. A record that doesn't match the Claude-session shape becomes a
+`raw` row, which is what drives the Table and Schema views.
 
-Parse and render Claude Code `.jsonl` session files in a browser with:
-- Message timeline (user, assistant, tool calls, tool results)
-- Markdown rendering in assistant messages
-- Collapsible thinking blocks
-- Collapsible tool call details with copyable commands
-- Tool results grouped under their tool call
-- Metadata entries hidden by default (toggle to show)
-- File upload / drag-and-drop of `.jsonl` files
-- Fully client-side (no server needed)
-- Deployed to GitHub Pages via Actions workflow
+The compiled artifacts (`web/parser.js`, `web/parser.wasm`) are committed, so the demo runs with no
+build step — you only need the toolchain below if you change the C++.
+
+## Tech stack
+
+- **C++23** — core parser and schema analysis
+- **Emscripten** — compile the core to WebAssembly
+- **marked.js** + **DOMPurify** — Markdown rendering
+- **highlight.js** (Catppuccin) — syntax highlighting
+- **Catch2** — C++ test framework (amalgamated, in `third_party/`)
+- **CMake** — one `CMakeLists.txt`, two targets: native (for TDD) or Emscripten (for WASM)
+
+## Build & test
+
+The same `CMakeLists.txt` serves both builds: invoked via `emcmake` it builds the WASM target,
+otherwise it builds the native Catch2 test runner.
+
+```bash
+# Native build + C++ tests (TDD loop)
+cmake -B build && cmake --build build && ./build/tests
+
+# JS renderer tests
+node tests/renderer_test.js
+
+# Rebuild the WASM (only if you changed the C++ core; requires Emscripten + Python 3.10+)
+# Point EMSDK at your emsdk root, e.g. export EMSDK=/path/to/emsdk
+cmake -B build_wasm -DCMAKE_TOOLCHAIN_FILE=cmake/emscripten_toolchain.cmake .
+cmake --build build_wasm          # → web/parser.js + web/parser.wasm
+
+# Run the viewer locally (a static server is required — .wasm can't load over file://)
+cd web && python3 -m http.server 8080
+# open http://localhost:8080
+```
 
 ## Deployment
 
-The site is shipped two ways. Both serve the contents of `web/` as static files — there is no backend.
-
-### Primary — self-hosted VPS (`makflint.github.io`)
-
-Manual rsync from your dev machine after rebuilding the WASM. Traefik on the VPS terminates TLS and routes `Host=makflint.github.io` to a docker container `jsonl-pretty` (`nginx:alpine`) that bind-mounts `/srv/app` → `/usr/share/nginx/html`. Push files into that directory and they are live immediately — no container restart needed.
+The whole app is static — there is no backend. [`.github/workflows/pages.yml`](.github/workflows/pages.yml)
+publishes the contents of `web/` to GitHub Pages on every push to `main`; GitHub serves `.wasm`
+with the correct `application/wasm` type, so it works out of the box.
 
 ```bash
-# 1. Rebuild WASM if parser.hpp / wasm_bindings.cpp changed
-EMSDK=/opt/emsdk cmake --build build_wasm
-
-# 2. Push the four web assets to the docroot
-rsync -av --checksum \
-    web/index.html web/parser.js web/parser.wasm web/renderer.js \
-    user@server:/srv/app/
-
-# 3. Smoke-check
-curl -s -o /dev/null -w "HTTP %{http_code}\n" https://makflint.github.io/jsonl-viewer/
+git push origin main
+# → "Deploy to GitHub Pages" runs (~1 min) → https://makflint.github.io/jsonl-viewer/
 ```
 
-The docroot files are owned by `ubuntu` (mode 644) so no `sudo` is needed.
+## Development
 
-Traefik routing is configured via container labels (set when the container was created); they survive `docker restart` but not `docker rm`. If the container is ever recreated, use:
-
-```bash
-docker run -d --name jsonl-pretty \
-    -v /srv/app:/usr/share/nginx/html \
-    --label traefik.enable=true \
-    --label "traefik.http.routers.jsonl-pretty.rule=Host(\`makflint.github.io\`)" \
-    --label traefik.http.routers.jsonl-pretty.entrypoints=websecure \
-    --label traefik.http.routers.jsonl-pretty.tls.certresolver=letsencrypt \
-    --network <traefik-network> \
-    nginx:alpine
-```
-
-### Mirror — GitHub Pages
-
-`.github/workflows/pages.yml` uploads `web/` as the Pages artifact on every push to `master`. No manual steps — the workflow handles checkout, configure-pages, upload, and deploy.
-
-```bash
-git push origin master
-# → Actions workflow "Deploy to GitHub Pages" runs in ~1 min
-# → https://makflint.github.io/jsonl-viewer/ updated
-```
-
-### Why both?
-
-The self-hosted deploy gives a vanity URL on infrastructure already provisioned for other projects and decouples the live site from GitHub's availability. GitHub Pages stays as an automatic mirror so the public-facing demo is never older than `master`.
+Built test-first. The TDD, Clean Code, and commit conventions used throughout live in
+[`Agents.md`](Agents.md).

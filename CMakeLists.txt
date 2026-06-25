@@ -6,7 +6,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(EMSCRIPTEN)
     add_executable(parser src/wasm_bindings.cpp)
-    target_compile_options(parser PRIVATE -O2 -fexceptions)
+    # Strip the absolute source prefix from __FILE__/debug strings so the
+    # published .wasm doesn't embed local build paths.
+    target_compile_options(parser PRIVATE -O2 -fexceptions -ffile-prefix-map=${CMAKE_SOURCE_DIR}/=)
     target_link_options(parser PRIVATE
         --bind
         -sMODULARIZE=1

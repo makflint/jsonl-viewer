@@ -1,10 +1,11 @@
-# Example JSONL files
+# Example files
 
-Drop any of these into the viewer at https://makflint.github.io/jsonl-viewer/ (or `python3 -m http.server` in `web/`) to see how each kind of input renders.
+Drop any of these into the viewer (https://makflint.github.io/jsonl-viewer/, or `python3 -m http.server`
+in `web/`) to see how each kind of input renders.
 
-| File | Lines | Schema | What it exercises |
-|------|-------|--------|-------------------|
-| `claude-session.jsonl` | 22 | Claude Code session log | The original target format: `user`/`assistant` entries, `thinking` blocks, `tool_use` + `tool_result`, `ai-title`, metadata types like `queue-operation` and `file-history-snapshot`. |
-| `sample-records.jsonl` | 78 | sample records (sample records) | The raw-fallback path: each line is arbitrary JSON with no Claude session schema, so the parser surfaces them as `raw` entries with pretty-printed JSON and a `line N` header. |
+| File | Records | Kind | What it exercises |
+|------|---------|------|-------------------|
+| `claude-session.jsonl` | 8 | Claude Code session | The message timeline: `user`/`assistant` entries, a `thinking` block, Markdown with a code block, a `tool_use` (with a copyable command) and its nested `tool_result`, an `ai-title`, and metadata types (`queue-operation`, `file-history-snapshot`) hidden behind the toggle. |
+| `products.jsonl` | 24 | Raw JSONL records | The raw-fallback path: arbitrary JSON with no session schema → pretty-printed rows **plus** a Table view with grouped headers (nested `dimensions`, `supplier`) and a Schema tab (presence %, types, numeric ranges, array sizes, top values). |
 
-The session file is a sanitised real session about Firefox-extension XPI build artifacts — no credentials, no PII. The sample data is public record content from `example.com`.
+Both files are synthetic and contain no real personal data.
