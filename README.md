@@ -11,7 +11,7 @@ is never uploaded and never leaves the browser.
 
 **▶ Live demo: https://makflint.github.io/jsonl-viewer/** — drop a file, or click a *Load sample* button.
 
-![A Claude Code session rendered as a readable timeline](docs/demo-session.png)
+![JSONL Viewer — loading and rendering a Claude Code session in the browser](docs/demo.gif)
 
 ## Two render paths
 
@@ -20,8 +20,10 @@ The viewer parses the input and picks a presentation automatically — no config
 ### Claude Code session → readable timeline
 
 `user` / `assistant` / tool calls become a message timeline with Markdown, collapsible
-*thinking* blocks, and tool-call details whose results nest under the call (shown above).
+*thinking* blocks, and tool-call details whose results nest under the call.
 Metadata entries are hidden behind a toggle. Try **Load Claude session** on the live demo.
+
+![A Claude Code session rendered as a readable timeline](docs/demo-session.png)
 
 ### Any other JSONL / JSON → Table + Schema
 
