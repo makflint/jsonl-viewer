@@ -115,7 +115,7 @@ Built test-first. The TDD, Clean Code, and commit conventions used throughout li
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Vendored dependencies in `third_party/` keep their own licenses
-(Catch2 under BSL-1.0, nlohmann/json under MIT).
+MIT © Maciej Krzemiński — see [LICENSE](LICENSE).
+Vendored code in `third_party/` keeps its own licenses (Catch2 under BSL-1.0, nlohmann/json under MIT).
 
-A large part of this project was written with [Claude Code](https://claude.com/claude-code), Anthropic's AI coding assistant.
+Built by Maciej Krzemiński, using Claude generative-AI tooling — Claude Code and Claude models (Anthropic) — throughout for design, code generation and tests.
