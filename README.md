@@ -8,6 +8,7 @@ is never uploaded and never leaves the browser.
 [![Deploy to GitHub Pages](https://github.com/makflint/jsonl-viewer/actions/workflows/pages.yml/badge.svg)](https://github.com/makflint/jsonl-viewer/actions/workflows/pages.yml)
 ![C++23](https://img.shields.io/badge/C%2B%2B-23-00599C?logo=cplusplus&logoColor=white)
 ![WebAssembly](https://img.shields.io/badge/WebAssembly-Emscripten-654FF0?logo=webassembly&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **▶ Live demo: https://makflint.github.io/jsonl-viewer/** — drop a file, or click a *Load sample* button.
 
@@ -111,3 +112,8 @@ git push origin main
 
 Built test-first. The TDD, Clean Code, and commit conventions used throughout live in
 [`Agents.md`](Agents.md).
+
+## License
+
+MIT — see [LICENSE](LICENSE). Vendored dependencies in `third_party/` keep their own licenses
+(Catch2 under BSL-1.0, nlohmann/json under MIT).
